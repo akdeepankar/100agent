@@ -1077,6 +1077,7 @@ export default function UserSpacePage({ params }) {
                   + Add Card
                 </button>
                 {brainstormCards.map(card => (
+                  // eslint-disable-next-line jsx-a11y/no-static-element-interactions
                   <div
                     key={card.id}
                     className="absolute cursor-move bg-yellow-200 border border-yellow-400 rounded-lg shadow-lg p-4 min-w-[160px] min-h-[80px] max-w-xs select-none hover:shadow-2xl transition flex flex-col justify-between"

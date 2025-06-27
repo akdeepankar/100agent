@@ -1082,7 +1082,7 @@ export default function UserSpacePage({ params }) {
                     className="absolute cursor-move bg-yellow-200 border border-yellow-400 rounded-lg shadow-lg p-4 min-w-[160px] min-h-[80px] max-w-xs select-none hover:shadow-2xl transition flex flex-col justify-between"
                     style={{ left: card.x, top: card.y, zIndex: 20 }}
                     onMouseDown={e => handleCardMouseDown(e, card)}
-                    onDoubleClick={() => handleBrainstormCardClick(card)}
+                    onClick={() => handleBrainstormCardClick(card)}
                     tabIndex={0}
                     role="button"
                     aria-label="Edit note"
@@ -1093,7 +1093,7 @@ export default function UserSpacePage({ params }) {
                     }}
                   >
                     <div className="text-yellow-900 font-semibold text-base break-words whitespace-pre-line min-h-[40px] mb-4">
-                      {card.note ? card.note : <span className="italic text-yellow-600">(Double click to add note)</span>}
+                      {card.note ? card.note : <span className="italic text-yellow-600">(Click to add note)</span>}
                     </div>
                     <div className="flex gap-2 justify-end mt-2">
                       <button className="rounded-full bg-white border border-yellow-400 text-yellow-600 hover:bg-yellow-100 w-8 h-8 flex items-center justify-center shadow transition" title="Search" onClick={e => { e.stopPropagation(); handleCardSearch(card); }}>

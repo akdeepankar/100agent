@@ -1086,6 +1086,11 @@ export default function UserSpacePage({ params }) {
                     tabIndex={0}
                     role="button"
                     aria-label="Edit note"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleBrainstormCardClick(card);
+                      }
+                    }}
                   >
                     <div className="text-yellow-900 font-semibold text-base break-words whitespace-pre-line min-h-[40px] mb-4">
                       {card.note ? card.note : <span className="italic text-yellow-600">(Double click to add note)</span>}

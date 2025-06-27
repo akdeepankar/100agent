@@ -1126,6 +1126,13 @@ export default function SpaceDashboard({ params }) {
                                             key={index} 
                                             className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-md"
                                             onClick={() => handleCardClick(flashcardSet, index)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={e => {
+                                              if (e.key === 'Enter' || e.key === ' ') {
+                                                handleCardClick(flashcardSet, index);
+                                              }
+                                            }}
                                           >
                                             <p className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                                               <span className="text-xs px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 rounded">Q</span>
@@ -1164,7 +1171,7 @@ export default function SpaceDashboard({ params }) {
                             </div>
                           ) : (
                             <div className="text-center py-8">
-                              <p className="text-gray-500 dark:text-gray-400">No flashcards yet. Create some using the "Add Content" button!</p>
+                              <p className="text-gray-500 dark:text-gray-400">No flashcards yet. Create some using the &quot;Add Content&quot; button!</p>
                             </div>
                           )}
                         </CardBody>
@@ -1188,6 +1195,14 @@ export default function SpaceDashboard({ params }) {
                                   onClick={() => {
                                     setSelectedSummary(summary);
                                     setShowSummaryModal(true);
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      setSelectedSummary(summary);
+                                      setShowSummaryModal(true);
+                                    }
                                   }}
                                 >
                                   <div className="flex items-start justify-between">
@@ -1232,7 +1247,7 @@ export default function SpaceDashboard({ params }) {
                             </div>
                           ) : (
                             <div className="text-center py-8">
-                              <p className="text-gray-500 dark:text-gray-400">No summaries yet. Generate a summary using the "Add Content" button!</p>
+                              <p className="text-gray-500 dark:text-gray-400">No summaries yet. Generate a summary using the &quot;Add Content&quot; button!</p>
                             </div>
                           )}
                         </CardBody>
@@ -1335,7 +1350,7 @@ export default function SpaceDashboard({ params }) {
                               <div className="mb-4 text-6xl">📝</div>
                               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No quizzes yet</h3>
                               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                Generate your first quiz to test your students' knowledge
+                                Generate your first quiz to test your students&apos; knowledge
                               </p>
                               <button
                                 onClick={() => setShowQuizModal(true)}
@@ -1373,6 +1388,7 @@ export default function SpaceDashboard({ params }) {
                                       {ab.fileUrl && (
                                         <audio controls className="w-64">
                                           <source src={ab.fileUrl} type="audio/mpeg" />
+                                          <track kind="captions" src="" label="No captions" default />
                                           Your browser does not support the audio element.
                                         </audio>
                                       )}
@@ -1486,26 +1502,38 @@ export default function SpaceDashboard({ params }) {
             </h2>
             <form onSubmit={handleEditChapter} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="edit-chapter-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Chapter Name
                 </label>
                 <input
+                  id="edit-chapter-name"
                   type="text"
                   value={editedChapter.name}
-                  onChange={(e) => setEditedChapter({ ...editedChapter, name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
                   required
+                  onChange={(e) =>
+                    setEditedChapter({
+                      ...editedChapter,
+                      name: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="edit-chapter-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Description
                 </label>
                 <textarea
+                  id="edit-chapter-description"
                   value={editedChapter.description}
-                  onChange={(e) => setEditedChapter({ ...editedChapter, description: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
                   rows="3"
+                  onChange={(e) =>
+                    setEditedChapter({
+                      ...editedChapter,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="flex justify-end gap-3">

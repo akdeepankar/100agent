@@ -435,7 +435,7 @@ export default function UserSpacePage({ params }) {
         ),
         databases.listDocuments(
           DATABASE_ID,
-          'summaries',
+          "summaries",
           [Query.equal('chapterId', chapter.$id), Query.equal('spaceId', spaceId)]
         ),
         databases.listDocuments(
@@ -1060,7 +1060,7 @@ export default function UserSpacePage({ params }) {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-400 dark:text-gray-500">You haven't saved any web notes yet. Generate some from the 'New Web Note' button!</p>
+                    <p className="text-gray-400 dark:text-gray-500">You haven&apos;t saved any web notes yet. Generate some from the &apos;New Web Note&apos; button!</p>
                   </div>
                 )}
               </CardBody>
@@ -1108,9 +1108,8 @@ export default function UserSpacePage({ params }) {
                       <textarea
                         className="w-full min-h-[120px] p-3 border border-yellow-400 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-yellow-50 text-yellow-900 font-medium"
                         value={brainstormNote}
-                        onChange={e => setBrainstormNote(e.target.value)}
                         placeholder="Write your note here..."
-                        autoFocus
+                        onChange={(e) => setBrainstormNote(e.target.value)}
                       />
                       <div className="flex justify-end gap-4 mt-6">
                         <button onClick={handleBrainstormModalClose} className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
@@ -1133,9 +1132,9 @@ export default function UserSpacePage({ params }) {
                           className="w-full text-left bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700 rounded-lg p-3 shadow hover:bg-indigo-200 dark:hover:bg-indigo-800 transition"
                           onClick={() => { setSelectedChatCard(msg); setShowChatCardModal(true); }}
                         >
-                          <div className="font-bold text-indigo-900 dark:text-indigo-200 text-sm mb-1">{msg.sender} shared an insight</div>
-                          <div className="truncate text-base text-indigo-800 dark:text-indigo-100">{msg.prompt}</div>
-                          <div className="text-xs opacity-70 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                          <span className="font-bold text-indigo-900 dark:text-indigo-200 text-sm mb-1 block">{msg.sender} shared an insight</span>
+                          <span className="truncate text-base text-indigo-800 dark:text-indigo-100 block">{msg.prompt}</span>
+                          <span className="text-xs opacity-70 mt-1 text-right block">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </button>
                       </div>
                     ) : (
@@ -1254,6 +1253,13 @@ export default function UserSpacePage({ params }) {
                   className="w-72 h-48 mb-6 relative"
                   style={{ perspective: '1000px', cursor: 'pointer' }}
                   onClick={() => setIsFlipped((f) => !f)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setIsFlipped((f) => !f);
+                    }
+                  }}
                 >
                   <div
                     className="absolute w-full h-full"
@@ -1462,6 +1468,7 @@ export default function UserSpacePage({ params }) {
             {selectedAudiobook.fileUrl && (
               <audio controls className="w-full mb-4">
                 <source src={selectedAudiobook.fileUrl} type="audio/mpeg" />
+                <track kind="captions" src="" label="No captions" default />
                 Your browser does not support the audio element.
               </audio>
             )}

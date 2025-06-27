@@ -15,8 +15,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
-  const [activeTab, setActiveTab] = useState("student");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +32,6 @@ export default function Login() {
       // Redirect to dashboard
       router.push("/");
     } catch (error) {
-      console.error("Login error:", error);
       setError(error.message || "Failed to login. Please try again.");
     } finally {
       setLoading(false);
@@ -49,7 +46,7 @@ export default function Login() {
 
     try {
       // Create account
-      const user = await account.create(ID.unique(), email, password, name);
+      await account.create(ID.unique(), email, password, name);
 
       // Create session
       await account.createEmailPasswordSession(email, password);
@@ -57,7 +54,6 @@ export default function Login() {
       // Redirect to dashboard
       router.push("/");
     } catch (error) {
-      console.error("Registration error:", error);
       setError(error.message || "Failed to register. Please try again.");
     } finally {
       setLoading(false);
@@ -82,10 +78,11 @@ export default function Login() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
           <form className="space-y-4" onSubmit={handleLogin}>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Email
               </label>
               <input
+                id="login-email"
                 required
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 placeholder="Enter your email"
@@ -95,10 +92,11 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Password
               </label>
               <input
+                id="login-password"
                 required
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 placeholder="Enter your password"
@@ -135,7 +133,7 @@ export default function Login() {
               className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
               onClick={() => setShowRegisterModal(true)}
             >
-              Don't have an account? Register
+              Don&apos;t have an account? Register
             </button>
           </div>
         </div>
@@ -150,10 +148,11 @@ export default function Login() {
             <form onSubmit={handleRegister}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label htmlFor="register-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Full Name
                   </label>
                   <input
+                    id="register-name"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     placeholder="Enter your full name"
@@ -163,10 +162,11 @@ export default function Login() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label htmlFor="register-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Email
                   </label>
                   <input
+                    id="register-email"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     placeholder="Enter your email"
@@ -176,10 +176,11 @@ export default function Login() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label htmlFor="register-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Password
                   </label>
                   <input
+                    id="register-password"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     placeholder="Create a password"

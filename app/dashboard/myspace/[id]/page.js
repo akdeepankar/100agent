@@ -679,6 +679,16 @@ export default function UserSpacePage({ params }) {
               style={{ position: 'absolute', right: 0, top: 32, zIndex: 50 }}
               onMouseDown={handleSidebarDrag}
               title="Resize sidebar"
+              role="separator"
+              tabIndex={0}
+              aria-orientation="vertical"
+              aria-valuenow={sidebarWidth}
+              aria-valuemin={56}
+              aria-valuemax={400}
+              onKeyDown={e => {
+                if (e.key === 'ArrowLeft') setSidebarWidth(w => Math.max(56, w - 10));
+                if (e.key === 'ArrowRight') setSidebarWidth(w => Math.min(400, w + 10));
+              }}
             />
           </div>
           <div className="flex flex-row gap-4">

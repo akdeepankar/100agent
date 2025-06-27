@@ -24,7 +24,6 @@ const QUIZZES_COLLECTION_ID = 'quizzes';
 const AUDIOBOOKS_COLLECTION_ID = 'audiobooks';
 const STORYBOARDS_COLLECTION_ID = 'storyboards';
 const WEB_NOTES_COLLECTION_ID = 'webnotes';
-const BRAINSTORM_COLLECTION_ID = 'brainstorm';
 
 // This is the new, self-contained, and corrected modal component.
 // It is now defined outside the main page component to avoid re-definitions on re-renders.
@@ -335,28 +334,9 @@ export default function UserSpacePage({ params }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const sidebarRef = useRef(null);
   const prevSidebarWidth = useRef(260);
-  // Brainstorm sticky board state
-  const [brainstormCards, setBrainstormCards] = useState([]);
-  const [showBrainstormModal, setShowBrainstormModal] = useState(false);
-  const [editingCard, setEditingCard] = useState(null);
-  const [brainstormNote, setBrainstormNote] = useState('');
-  const brainstormCanvasRef = useRef(null);
-  const [brainstormDocId, setBrainstormDocId] = useState(null);
   const [searchingCard, setSearchingCard] = useState(null);
   const [searchResult, setSearchResult] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [showBrainstormIdeasModal, setShowBrainstormIdeasModal] = useState(false);
-  const [ideasCard, setIdeasCard] = useState(null);
-  const [ideasResult, setIdeasResult] = useState(null);
-  const [ideasLoading, setIdeasLoading] = useState(false);
-  const [ideasError, setIdeasError] = useState('');
-
-  const [brainstormChatHistory, setBrainstormChatHistory] = useState([
-    { id: 1, sender: 'Alice', text: 'Hey everyone, starting a brainstorm for our new project!', timestamp: new Date(Date.now() - 60000 * 5) },
-    { id: 2, sender: 'Bob', text: 'Great! I\'ve added a card with my initial idea.', timestamp: new Date(Date.now() - 60000 * 3) }
-  ]);
-  const [brainstormChatMessage, setBrainstormChatMessage] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
   const [showChatCardModal, setShowChatCardModal] = useState(false);
   const [selectedChatCard, setSelectedChatCard] = useState(null);
   const brainstormChatRef = useRef(null);
@@ -392,30 +372,6 @@ export default function UserSpacePage({ params }) {
       }
     };
     fetchData();
-  }, [spaceId]);
-
-  useEffect(() => {
-    if (!spaceId) return;
-    const fetchBrainstormBoard = async () => {
-      try {
-        const res = await databases.listDocuments(
-          DATABASE_ID,
-          BRAINSTORM_COLLECTION_ID,
-          [Query.equal('spaceId', spaceId)]
-        );
-        if (res.documents.length > 0) {
-          setBrainstormDocId(res.documents[0].$id);
-          setBrainstormCards(JSON.parse(res.documents[0].cards || '[]'));
-        } else {
-          setBrainstormDocId(null);
-          setBrainstormCards([]);
-        }
-      } catch (err) {
-        setBrainstormDocId(null);
-        setBrainstormCards([]);
-      }
-    };
-    fetchBrainstormBoard();
   }, [spaceId]);
 
   useEffect(() => {
@@ -594,108 +550,6 @@ export default function UserSpacePage({ params }) {
     audiobooks.length > 0 ||
     storyboards.length > 0;
 
-  const saveBrainstormBoard = async (cards) => {
-    try {
-      const user = await account.get();
-      if (brainstormDocId) {
-        await databases.updateDocument(
-          DATABASE_ID,
-          BRAINSTORM_COLLECTION_ID,
-          brainstormDocId,
-          { cards: JSON.stringify(cards) }
-        );
-      } else {
-        const doc = await databases.createDocument(
-          DATABASE_ID,
-          BRAINSTORM_COLLECTION_ID,
-          ID.unique(),
-          {
-            spaceId,
-            cards: JSON.stringify(cards),
-            createdBy: user.$id,
-          },
-          [
-            `read("team:${spaceId}")`,
-            `update("team:${spaceId}")`,
-            `delete("team:${spaceId}")`
-          ]
-        );
-        setBrainstormDocId(doc.$id);
-      }
-    } catch (err) {
-      toast.error('Failed to save brainstorm board');
-    }
-  };
-
-  const handleBrainstormCardsChange = (newCards) => {
-    setBrainstormCards(newCards);
-    saveBrainstormBoard(newCards);
-  };
-
-  const handleAddBrainstormCard = () => {
-    const newCard = {
-      id: Date.now(),
-      x: 100 + Math.random() * 200,
-      y: 100 + Math.random() * 100,
-      note: '',
-    };
-    const updatedCards = [...brainstormCards, newCard];
-    handleBrainstormCardsChange(updatedCards);
-    setEditingCard(newCard);
-    setBrainstormNote('');
-    setShowBrainstormModal(true);
-  };
-  const handleBrainstormCardClick = (card) => {
-    setEditingCard(card);
-    setBrainstormNote(card.note);
-    setShowBrainstormModal(true);
-  };
-  const handleBrainstormModalSave = () => {
-    const updatedCards = brainstormCards.map(card =>
-      card.id === editingCard.id ? { ...card, note: brainstormNote } : card
-    );
-    handleBrainstormCardsChange(updatedCards);
-    setShowBrainstormModal(false);
-    setEditingCard(null);
-    setBrainstormNote('');
-  };
-  const handleBrainstormModalClose = () => {
-    setShowBrainstormModal(false);
-    setEditingCard(null);
-    setBrainstormNote('');
-  };
-  // Drag logic for cards
-  const dragCardRef = useRef(null);
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const handleCardMouseDown = (e, card) => {
-    e.stopPropagation();
-    dragCardRef.current = card.id;
-    dragOffsetRef.current = {
-      x: e.clientX - card.x,
-      y: e.clientY - card.y,
-    };
-    window.addEventListener('mousemove', handleCardMouseMove);
-    window.addEventListener('mouseup', handleCardMouseUp);
-  };
-  const handleCardMouseMove = (e) => {
-    if (dragCardRef.current) {
-      setBrainstormCards(cards => {
-        const updated = cards.map(card =>
-          card.id === dragCardRef.current
-            ? { ...card, x: e.clientX - dragOffsetRef.current.x, y: e.clientY - dragOffsetRef.current.y }
-            : card
-        );
-        saveBrainstormBoard(updated);
-        return updated;
-      });
-    }
-  };
-  const handleCardMouseUp = () => {
-    dragCardRef.current = null;
-    window.removeEventListener('mousemove', handleCardMouseMove);
-    window.removeEventListener('mouseup', handleCardMouseUp);
-  };
-
   const handleCardSearch = async (card) => {
     setSearchingCard(card);
     setSearchResult(null);
@@ -834,16 +688,12 @@ export default function UserSpacePage({ params }) {
               className="w-full mb-0 mr-4 ml-2"
               selectedKey={
                 activeTab === 'latest-updates' ? 'latest-updates' :
-                activeTab === 'brainstorm' ? 'brainstorm' :
                 (showChaptersList ? 'chapters' : (activeTab === 'webnotes' ? 'webnotes' : ''))
               }
               onSelectionChange={key => {
                 if (key === 'latest-updates') {
                   setShowChaptersList(false);
                   setActiveTab('latest-updates');
-                } else if (key === 'brainstorm') {
-                  setShowChaptersList(false);
-                  setActiveTab('brainstorm');
                 } else if (key === 'chapters') {
                   setShowChaptersList(v => !v);
                   if (!showChaptersList) setActiveTab('flashcards');
@@ -854,7 +704,6 @@ export default function UserSpacePage({ params }) {
               }}
             >
               <Tab key="latest-updates" title={<span className="font-bold text-xl py-6 px-8 flex w-full justify-start items-center">🆕 Updates</span>} className="justify-start w-full" />
-              <Tab key="brainstorm" title={<span className="font-bold text-xl py-6 px-8 flex w-full justify-start items-center">🧠 Brainstorm</span>} className="justify-start w-full" />
               <Tab key="chapters" title={<span className="truncate font-bold text-xl py-6 px-8 flex w-full justify-start items-center">📚 Chapters</span>} className="justify-start w-full" />
               <Tab key="webnotes" title={<span className="font-bold text-xl py-6 px-8 flex w-full justify-start items-center">📝 Web Notes</span>} className="justify-start w-full" />
             </Tabs>
@@ -1065,171 +914,6 @@ export default function UserSpacePage({ params }) {
                 )}
               </CardBody>
             </Card>
-          )}
-          {activeTab === 'brainstorm' && (
-            <div className="flex gap-4">
-              {/* Canvas Area */}
-              <div className="flex-grow relative w-full min-h-[600px] bg-yellow-50 dark:bg-yellow-100/10 rounded-xl border border-yellow-200 dark:border-yellow-300/30 shadow-inner overflow-hidden" ref={brainstormCanvasRef} style={{ height: '70vh' }}>
-                <button
-                  className="absolute top-4 left-4 z-10 px-4 py-2 bg-yellow-400 text-yellow-900 font-bold rounded-lg shadow hover:bg-yellow-500 transition"
-                  onClick={handleAddBrainstormCard}
-                >
-                  + Add Card
-                </button>
-                {brainstormCards.map(card => (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className="absolute cursor-move bg-yellow-200 border border-yellow-400 rounded-lg shadow-lg p-4 min-w-[160px] min-h-[80px] max-w-xs select-none hover:shadow-2xl transition flex flex-col justify-between text-left"
-                    style={{ left: card.x, top: card.y, zIndex: 20 }}
-                    onMouseDown={e => handleCardMouseDown(e, card)}
-                    onClick={() => handleBrainstormCardClick(card)}
-                    aria-label="Edit note"
-                  >
-                    <div className="text-yellow-900 font-semibold text-base break-words whitespace-pre-line min-h-[40px] mb-4">
-                      {card.note ? card.note : <span className="italic text-yellow-600">(Click to add note)</span>}
-                    </div>
-                    <div className="flex gap-2 justify-end mt-2">
-                      <button className="rounded-full bg-white border border-yellow-400 text-yellow-600 hover:bg-yellow-100 w-8 h-8 flex items-center justify-center shadow transition" title="Search" onClick={e => { e.stopPropagation(); handleCardSearch(card); }}>
-                        <span role="img" aria-label="search">🔍</span>
-                      </button>
-                      <button className="rounded-full bg-white border border-yellow-400 text-yellow-600 hover:bg-yellow-100 w-8 h-8 flex items-center justify-center shadow transition" title="Star" onClick={e => { e.stopPropagation(); handleCardIdeas(card); }}>
-                        <span role="img" aria-label="star">⭐</span>
-                      </button>
-                    </div>
-                  </button>
-                ))}
-                {/* Modal for editing card note */}
-                {showBrainstormModal && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Edit Note</h3>
-                      <textarea
-                        className="w-full min-h-[120px] p-3 border border-yellow-400 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-yellow-50 text-yellow-900 font-medium"
-                        value={brainstormNote}
-                        placeholder="Write your note here..."
-                        onChange={(e) => setBrainstormNote(e.target.value)}
-                      />
-                      <div className="flex justify-end gap-4 mt-6">
-                        <button onClick={handleBrainstormModalClose} className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button onClick={handleBrainstormModalSave} className="px-4 py-2 bg-yellow-500 text-yellow-900 font-bold rounded-md hover:bg-yellow-600">Save</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {/* Chat Area */}
-              <div className="w-96 flex-shrink-0 flex flex-col bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700" style={{ height: '70vh' }}>
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">Team Chat</h3>
-                </div>
-                <div ref={brainstormChatRef} className="flex-grow p-4 overflow-y-auto space-y-4">
-                  {brainstormChatHistory.map(msg => (
-                    msg.type === 'insightCard' ? (
-                      <div key={msg.id} className="flex justify-center">
-                        <button
-                          className="w-full text-left bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700 rounded-lg p-3 shadow hover:bg-indigo-200 dark:hover:bg-indigo-800 transition"
-                          onClick={() => { setSelectedChatCard(msg); setShowChatCardModal(true); }}
-                        >
-                          <span className="font-bold text-indigo-900 dark:text-indigo-200 text-sm mb-1 block">{msg.sender} shared an insight</span>
-                          <span className="truncate text-base text-indigo-800 dark:text-indigo-100 block">{msg.prompt}</span>
-                          <span className="text-xs opacity-70 mt-1 text-right block">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div key={msg.id} className={`flex ${msg.sender === currentUser?.name ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`p-3 rounded-lg max-w-xs ${msg.sender === currentUser?.name ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-slate-700'}`}>
-                          <div className="font-bold text-sm">{msg.sender}</div>
-                          <p className="text-base">{msg.text}</p>
-                          <div className="text-xs opacity-70 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                        </div>
-                      </div>
-                    )
-                  ))}
-                </div>
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Type a message..."
-                      className="w-full p-2 rounded bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
-                      value={brainstormChatMessage}
-                      onChange={e => setBrainstormChatMessage(e.target.value)}
-                      onKeyPress={e => e.key === 'Enter' && handleSendBrainstormMessage()}
-                    />
-                    <button
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
-                      onClick={handleSendBrainstormMessage}
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          {showBrainstormIdeasModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Insights</h3>
-                  <button onClick={() => setShowBrainstormIdeasModal(false)} className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl z-10" aria-label="Close">×</button>
-                </div>
-                <div className="mb-4 text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">Prompt:</span> {ideasCard?.note}
-                </div>
-                <div className="max-h-[60vh] overflow-y-auto">
-                  {ideasLoading && (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500 mb-4"></div>
-                      <span className="text-yellow-700 font-medium">Getting insights...</span>
-                    </div>
-                  )}
-                  {!ideasLoading && ideasError && (
-                    <div className="text-center text-red-500 py-4">{ideasError}</div>
-                  )}
-                  {!ideasLoading && ideasResult && Array.isArray(ideasResult) && (
-                    <div className="space-y-4">
-                      <ul className="list-disc list-inside text-base text-yellow-900 dark:text-yellow-200">
-                        {ideasResult.map((idea, i) => (
-                          <li key={i}>{idea}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-4 mt-6">
-                  {!ideasLoading && !ideasError && ideasResult && Array.isArray(ideasResult) && (
-                    <button
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
-                      onClick={() => {
-                        if (!ideasCard || !ideasResult) return;
-                        setBrainstormChatHistory(prev => [
-                          ...prev,
-                          {
-                            id: Date.now(),
-                            sender: currentUser?.name || 'You',
-                            prompt: ideasCard.note,
-                            response: Array.isArray(ideasResult) ? ideasResult.join('\n• ') : String(ideasResult),
-                            timestamp: new Date(),
-                            type: 'insightCard',
-                          }
-                        ]);
-                        setShowBrainstormIdeasModal(false);
-                      }}
-                    >
-                      Add to Chat
-                    </button>
-                  )}
-                  <button
-                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                    onClick={() => setShowBrainstormIdeasModal(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
         </main>
       </div>

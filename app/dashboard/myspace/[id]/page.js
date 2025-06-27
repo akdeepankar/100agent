@@ -673,23 +673,6 @@ export default function UserSpacePage({ params }) {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
               )}
             </button>
-            {/* Drag handle */}
-            <div
-              className="w-2 h-6 cursor-col-resize bg-transparent hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition"
-              style={{ position: 'absolute', right: 0, top: 32, zIndex: 50 }}
-              onMouseDown={handleSidebarDrag}
-              title="Resize sidebar"
-              role="separator"
-              tabIndex={0}
-              aria-orientation="vertical"
-              aria-valuenow={sidebarWidth}
-              aria-valuemin={56}
-              aria-valuemax={400}
-              onKeyDown={e => {
-                if (e.key === 'ArrowLeft') setSidebarWidth(w => Math.max(56, w - 10));
-                if (e.key === 'ArrowRight') setSidebarWidth(w => Math.min(400, w + 10));
-              }}
-            />
           </div>
           <div className="flex flex-row gap-4">
           <Tabs

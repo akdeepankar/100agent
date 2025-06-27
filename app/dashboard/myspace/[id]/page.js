@@ -1077,21 +1077,14 @@ export default function UserSpacePage({ params }) {
                   + Add Card
                 </button>
                 {brainstormCards.map(card => (
-                  // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-                  <div
+                  <button
                     key={card.id}
-                    className="absolute cursor-move bg-yellow-200 border border-yellow-400 rounded-lg shadow-lg p-4 min-w-[160px] min-h-[80px] max-w-xs select-none hover:shadow-2xl transition flex flex-col justify-between"
+                    type="button"
+                    className="absolute cursor-move bg-yellow-200 border border-yellow-400 rounded-lg shadow-lg p-4 min-w-[160px] min-h-[80px] max-w-xs select-none hover:shadow-2xl transition flex flex-col justify-between text-left"
                     style={{ left: card.x, top: card.y, zIndex: 20 }}
                     onMouseDown={e => handleCardMouseDown(e, card)}
                     onClick={() => handleBrainstormCardClick(card)}
-                    tabIndex={0}
-                    role="button"
                     aria-label="Edit note"
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        handleBrainstormCardClick(card);
-                      }
-                    }}
                   >
                     <div className="text-yellow-900 font-semibold text-base break-words whitespace-pre-line min-h-[40px] mb-4">
                       {card.note ? card.note : <span className="italic text-yellow-600">(Click to add note)</span>}
@@ -1104,7 +1097,7 @@ export default function UserSpacePage({ params }) {
                         <span role="img" aria-label="star">⭐</span>
                       </button>
                     </div>
-                  </div>
+                  </button>
                 ))}
                 {/* Modal for editing card note */}
                 {showBrainstormModal && (

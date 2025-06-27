@@ -1680,10 +1680,9 @@ export default function SpaceDashboard({ params }) {
             </h2>
             <form onSubmit={handleCreateChapter} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Chapter Name
-                </label>
+                <label htmlFor="new-chapter-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chapter Name</label>
                 <input
+                  id="new-chapter-name"
                   type="text"
                   value={newChapterName}
                   onChange={(e) => setNewChapterName(e.target.value)}
@@ -1692,10 +1691,9 @@ export default function SpaceDashboard({ params }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Description
-                </label>
+                <label htmlFor="new-chapter-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
+                  id="new-chapter-description"
                   value={newChapterDescription}
                   onChange={(e) => setNewChapterDescription(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
@@ -1736,15 +1734,14 @@ export default function SpaceDashboard({ params }) {
             )}
             <form onSubmit={handleGenerateFlashcards} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Enter URL
-                </label>
+                <label htmlFor="generate-flashcards-url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Enter URL</label>
                 <input
+                  id="generate-flashcards-url"
                   type="url"
                   value={urlInput}
                   onChange={(e) => {
                     setUrlInput(e.target.value);
-                    setError(''); // Clear error when input changes
+                    setError('');
                   }}
                   placeholder="https://example.com/article"
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
@@ -1850,9 +1847,17 @@ export default function SpaceDashboard({ params }) {
                   <div
                     key={index}
                     className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer group"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setSelectedFlashcard(index);
                       setShowEditFlashcardModal(true);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setSelectedFlashcard(index);
+                        setShowEditFlashcardModal(true);
+                      }
                     }}
                   >
                     <div className="space-y-2">
@@ -1927,10 +1932,9 @@ export default function SpaceDashboard({ params }) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Question
-                </label>
+                <label htmlFor="edit-flashcard-question" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Question</label>
                 <textarea
+                  id="edit-flashcard-question"
                   value={(() => {
                     const cards = typeof selectedFlashcardSet.cards === 'string' 
                       ? JSON.parse(selectedFlashcardSet.cards) 
@@ -1943,10 +1947,9 @@ export default function SpaceDashboard({ params }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Answer
-                </label>
+                <label htmlFor="edit-flashcard-answer" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Answer</label>
                 <textarea
+                  id="edit-flashcard-answer"
                   value={(() => {
                     const cards = typeof selectedFlashcardSet.cards === 'string' 
                       ? JSON.parse(selectedFlashcardSet.cards) 
@@ -2007,10 +2010,9 @@ export default function SpaceDashboard({ params }) {
                className="space-y-4"
              >
                <div>
-                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                   Enter URL
-                 </label>
+                 <label htmlFor="generate-summary-url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Enter URL</label>
                  <input
+                   id="generate-summary-url"
                    type="url"
                    value={summaryUrlInput}
                    onChange={e => setSummaryUrlInput(e.target.value)}

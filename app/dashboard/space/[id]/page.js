@@ -117,7 +117,6 @@ export default function SpaceDashboard({ params }) {
 
         setLoading(false);
       } catch (err) {
-        console.error('Error:', err);
         setError('Failed to load space data: ' + err.message);
         setLoading(false);
       }
@@ -127,32 +126,36 @@ export default function SpaceDashboard({ params }) {
   }, [spaceId]);
 
   useEffect(() => {
-    // Add custom scrollbar styles
-    const style = document.createElement('style');
-    style.textContent = `
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-      }
-      
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 4px;
-      }
-      
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.7);
-      }
-    `;
-    document.head.appendChild(style);
+    // Add custom scrollbar styles only on client side
+    if (typeof window !== 'undefined') {
+      const style = document.createElement('style');
+      style.textContent = `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5);
+          border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.7);
+        }
+      `;
+      document.head.appendChild(style);
 
-    // Cleanup function
-    return () => {
-      document.head.removeChild(style);
-    };
+      // Cleanup function
+      return () => {
+        if (document.head.contains(style)) {
+          document.head.removeChild(style);
+        }
+      };
+    }
   }, []);
 
   const fetchChapters = async (spaceId) => {
@@ -166,7 +169,6 @@ export default function SpaceDashboard({ params }) {
       );
       setChapters(response.documents);
     } catch (err) {
-      console.error('Error fetching chapters:', err);
       setError('Failed to fetch chapters');
     }
   };
@@ -182,18 +184,14 @@ export default function SpaceDashboard({ params }) {
       );
       setFlashcards(response.documents);
     } catch (err) {
-      console.error('Error fetching flashcards:', err);
       setError('Failed to fetch flashcards');
     }
   };
 
   const fetchSummaries = async (chapterId) => {
     if (!chapterId) {
-      console.log('No chapterId provided to fetchSummaries');
       return;
     }
-    
-    console.log('Fetching summaries for chapterId:', chapterId);
     
     try {
       const response = await databases.listDocuments(
@@ -205,21 +203,16 @@ export default function SpaceDashboard({ params }) {
           Query.orderDesc('createdAt')
         ]
       );
-      console.log('Fetched summaries:', response.documents);
       setSummaries(response.documents);
     } catch (err) {
-      console.error('Error fetching summaries:', err);
       toast.error('Failed to load summaries');
     }
   };
 
   const fetchQuizzes = async (chapterId) => {
     if (!chapterId) {
-      console.log('No chapterId provided to fetchQuizzes');
       return;
     }
-    
-    console.log('Fetching quizzes for chapterId:', chapterId);
     
     try {
       const response = await databases.listDocuments(
@@ -231,7 +224,6 @@ export default function SpaceDashboard({ params }) {
           Query.orderDesc('createdAt')
         ]
       );
-      console.log('Fetched quizzes:', response.documents);
       
       // Parse the questions JSON string for each quiz
       const parsedQuizzes = response.documents.map(doc => ({
@@ -241,7 +233,6 @@ export default function SpaceDashboard({ params }) {
       
       setQuizzes(parsedQuizzes);
     } catch (err) {
-      console.error('Error fetching quizzes:', err);
       toast.error('Failed to load quizzes');
     }
   };
@@ -264,7 +255,6 @@ export default function SpaceDashboard({ params }) {
       setStoryboards(parsedStoryboards);
     } catch (err) {
       if (err.code !== 404) {
-        console.error('Error fetching storyboards:', err);
         toast.error('Failed to load storyboards');
       } else {
         setStoryboards([]);
@@ -320,9 +310,6 @@ export default function SpaceDashboard({ params }) {
         formattedUrl = 'https://' + formattedUrl;
       }
 
-      console.log('Sending request to:', apiUrl);
-      console.log('Request payload:', { url: formattedUrl });
-
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -337,12 +324,9 @@ export default function SpaceDashboard({ params }) {
       });
 
       clearTimeout(timeoutId);
-
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        console.error('Error response:', errorData);
         if (response.status === 400) {
           throw new Error('Invalid URL format. Please enter a valid URL.');
         }
@@ -350,7 +334,6 @@ export default function SpaceDashboard({ params }) {
       }
 
       const responseData = await response.json();
-      console.log('Response data:', responseData);
       
       // Check if the response has the expected structure
       if (!responseData || typeof responseData !== 'object') {
@@ -384,7 +367,6 @@ export default function SpaceDashboard({ params }) {
       setShowToolsModal(false); // Close the tools modal
       setShowGeneratedFlashcardsModal(true); // Open the new modal
     } catch (err) {
-      console.error('Error generating flashcards:', err);
       if (err.name === 'AbortError') {
         setError('Request timed out. The server is taking too long to respond. Please try again.');
       } else if (err.message.includes('Failed to fetch')) {
@@ -425,7 +407,6 @@ export default function SpaceDashboard({ params }) {
       loadFlashcards(selectedChapter.$id);
       toast.success('Flashcards saved successfully!');
     } catch (err) {
-      console.error('Error saving flashcards:', err);
       setError('Failed to save flashcards. Please try again.');
     }
   };
@@ -449,7 +430,6 @@ export default function SpaceDashboard({ params }) {
       
       setFlashcards(parsedFlashcards);
     } catch (err) {
-      console.error('Error loading flashcards:', err);
       toast.error('Failed to load flashcards');
     }
   };
@@ -481,13 +461,12 @@ export default function SpaceDashboard({ params }) {
       const updatedChapter = { ...selectedChapter, ...editedChapter };
       setSelectedChapter(updatedChapter);
     } catch (err) {
-      console.error('Error updating chapter:', err);
       setError('Failed to update chapter');
     }
   };
 
   const handleDeleteChapter = async () => {
-    if (window.confirm('Are you sure you want to delete this chapter? This will also delete all associated flashcards.')) {
+    if (typeof window !== 'undefined' && window.confirm('Are you sure you want to delete this chapter? This will also delete all associated flashcards.')) {
       try {
         // First delete all flashcards in this chapter
         const flashcards = await databases.listDocuments(
@@ -514,7 +493,6 @@ export default function SpaceDashboard({ params }) {
         setSelectedChapter(null);
         await fetchChapters(spaceId);
       } catch (err) {
-        console.error('Error deleting chapter:', err);
         setError('Failed to delete chapter');
       }
     }

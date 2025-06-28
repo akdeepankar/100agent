@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Client, Account, Teams, Databases, Query, ID, Storage } from 'appwrite';
-import { use } from 'react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { Tabs, Tab, Card, CardBody } from "@heroui/react";
@@ -29,8 +28,7 @@ const AUDIOBOOKS_BUCKET_ID = 'audiobooks'; // Make sure this matches your Appwri
 
 export default function SpaceDashboard({ params }) {
   const router = useRouter();
-  const unwrappedParams = use(params);
-  const spaceId = unwrappedParams.id;
+  const spaceId = params.id;
   const [user, setUser] = useState(null);
   const [space, setSpace] = useState(null);
   const [loading, setLoading] = useState(true);

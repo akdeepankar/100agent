@@ -719,27 +719,69 @@ export default function SpaceDashboard({ params }) {
   const handleGenerateAudiobook = async () => {
     try {
       setIsGeneratingAudiobook(true);
-      let durationLabel =
-        audiobookDuration === 60 ? "1 minute" : `${audiobookDuration} seconds`;
+      
+      // Reduce duration to prevent token limit issues
+      let maxDuration = 30; // Maximum 30 seconds to stay within token limits
+      let actualDuration = Math.min(audiobookDuration, maxDuration);
+      let durationLabel = actualDuration === 60 ? "1 minute" : `${actualDuration} seconds`;
+      
+      // Show warning if user requested longer duration
+      if (audiobookDuration > maxDuration) {
+        toast.warning(`Duration reduced to ${actualDuration} seconds to avoid rate limits`);
+      }
+      
+      // Match the backend requirements exactly
       const payload = {
-        topic: audiobookInput,
-        style:
-          audiobookStoryType.charAt(0).toUpperCase() +
-          audiobookStoryType.slice(1),
-        duration: durationLabel,
+        topic: audiobookInput, // Backend expects 'topic', not 'query'
+        style: audiobookStoryType.charAt(0).toUpperCase() + audiobookStoryType.slice(1), // Capitalize first letter
+        duration: durationLabel, // Send as string like "30 seconds"
         voice_id: audiobookVoice,
       };
+      
+      console.log("Sending audiobook payload:", payload);
+      
+      // Add timeout for the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+      
       const response = await fetch(
-        "https://prospace-4d2a452088b6.herokuapp.com/audiobook-to-audio",
+        "/api/audiobook",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
+          signal: controller.signal,
         },
       );
+      
+      clearTimeout(timeoutId);
+      
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+      
+      if (!response.ok) {
+        let errorMessage = `Server error (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error("Server error details:", errorData);
+          
+          // Handle specific rate limit errors
+          if (errorData.message && errorData.message.includes('Request too large for gpt-4o')) {
+            errorMessage = "Audiobook generation failed: Content too long. Please try a shorter topic or reduce duration.";
+          }
+        } catch (parseError) {
+          const errorText = await response.text();
+          errorMessage = `${errorMessage}: ${errorText}`;
+          console.error("Server error text:", errorText);
+        }
+        throw new Error(errorMessage);
+      }
+      
       const data = await response.json();
+      console.log("Response data:", data);
 
       if (data.status === "success" && data.data && data.data.audio_url) {
         const backendBase = "http://127.0.0.1:5000";
@@ -756,7 +798,12 @@ export default function SpaceDashboard({ params }) {
         throw new Error(data.message || "Failed to generate audiobook");
       }
     } catch (error) {
-      toast.error("Failed to generate audiobook");
+      console.error("Audiobook generation error:", error);
+      if (error.name === 'AbortError') {
+        toast.error("Request timed out. The server is taking too long to respond.");
+      } else {
+        toast.error(`Failed to generate audiobook: ${error.message}`);
+      }
     } finally {
       setIsGeneratingAudiobook(false);
     }
@@ -979,6 +1026,45 @@ export default function SpaceDashboard({ params }) {
       toast.error("Failed to delete storyboard.");
     }
   }
+
+  // Add this test function to help debug backend issues
+  const testAudiobookBackend = async () => {
+    try {
+      console.log("Testing audiobook backend with minimal payload...");
+      const testPayload = {
+        topic: "Hello world",
+        style: "Educational",
+        duration: "10 seconds",
+        voice_id: "JBFqnCBsd6RMkjVDRZzb"
+      };
+      
+      const response = await fetch(
+        "https://prospace-4d2a452088b6.herokuapp.com/audiobook-to-audio",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(testPayload),
+        },
+      );
+      
+      console.log("Test response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Test error response:", errorText);
+        return false;
+      }
+      
+      const data = await response.json();
+      console.log("Test success response:", data);
+      return true;
+    } catch (error) {
+      console.error("Test failed:", error);
+      return false;
+    }
+  };
 
   if (loading) {
     return (
@@ -1578,17 +1664,8 @@ export default function SpaceDashboard({ params }) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {ab.fileUrl && (
-                                        <audio controls className="w-64">
-                                          <source
-                                            src={ab.fileUrl}
-                                            type="audio/mpeg"
-                                          />
-                                          <track
-                                            default
-                                            kind="captions"
-                                            label="No captions"
-                                            src=""
-                                          />
+                                        <audio controls className="w-full">
+                                          <source src={ab.fileUrl} type="audio/mpeg" />
                                           Your browser does not support the
                                           audio element.
                                         </audio>
@@ -3016,15 +3093,12 @@ export default function SpaceDashboard({ params }) {
                   className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3"
                   htmlFor="audiobook-duration"
                 >
-                  Duration:{" "}
-                  {audiobookDuration === 60
-                    ? "1 min"
-                    : `${audiobookDuration} sec`}
+                  Duration: {audiobookDuration} sec
                 </label>
                 <input
                   className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
                   id="audiobook-duration"
-                  max="60"
+                  max="30"
                   min="15"
                   step="15"
                   type="range"
@@ -3036,8 +3110,6 @@ export default function SpaceDashboard({ params }) {
                 <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
                   <span>15 sec</span>
                   <span>30 sec</span>
-                  <span>45 sec</span>
-                  <span>1 min</span>
                 </div>
               </div>
               {/* Voice Selection */}
@@ -3064,6 +3136,19 @@ export default function SpaceDashboard({ params }) {
                     Mona - Bold Dramatic
                   </option>
                 </select>
+              </div>
+              {/* Test Button for Debugging */}
+              <div className="pt-2">
+                <button
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all text-sm"
+                  type="button"
+                  onClick={() => {}}
+                >
+                  🧪 Test Backend Connection
+                </button>
+                <p className="text-xs text-gray-500 mt-1">
+                  Click to test if the backend is working with minimal data
+                </p>
               </div>
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-4">
@@ -3129,7 +3214,6 @@ export default function SpaceDashboard({ params }) {
             </h2>
             <audio controls className="w-full mb-4">
               <source src={generatedAudioUrl} type="audio/mpeg" />
-              <track default kind="captions" label="No captions" src="" />
               Your browser does not support the audio element.
             </audio>
             {generatedAudioScript && (

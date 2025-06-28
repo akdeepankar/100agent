@@ -571,13 +571,63 @@ export default function SpaceDashboard({ params }) {
     }
   };
 
-  const handleDeleteFlashcard = (index) => {
-    const updatedFlashcards = flashcards.filter((_, i) => i !== index);
+  const handleDeleteFlashcard = async (flashcardSetId) => {
+    if (typeof window !== "undefined" && window.confirm("Are you sure you want to delete this flashcard set?")) {
+      try {
+        await databases.deleteDocument(
+          DATABASE_ID,
+          FLASHCARDS_COLLECTION_ID,
+          flashcardSetId,
+        );
+        
+        // Update local state
+        setFlashcards(flashcards.filter(fs => fs.$id !== flashcardSetId));
+        toast.success("Flashcard set deleted successfully!");
+      } catch (err) {
+        toast.error("Failed to delete flashcard set");
+      }
+    }
+  };
 
-    setFlashcards(updatedFlashcards);
-    if (selectedFlashcard === index) {
-      setShowEditFlashcardModal(false);
-      setSelectedFlashcard(null);
+  const handleDeleteIndividualCard = async (flashcardSet, cardIndex) => {
+    if (typeof window !== "undefined" && window.confirm("Are you sure you want to delete this card?")) {
+      try {
+        const cards = typeof flashcardSet.cards === "string" 
+          ? JSON.parse(flashcardSet.cards) 
+          : flashcardSet.cards;
+        
+        // Remove the card at the specified index
+        const updatedCards = cards.filter((_, index) => index !== cardIndex);
+        
+        // Update the database
+        await databases.updateDocument(
+          DATABASE_ID,
+          FLASHCARDS_COLLECTION_ID,
+          flashcardSet.$id,
+          {
+            cards: JSON.stringify(updatedCards),
+          },
+        );
+        
+        // Update local state
+        const updatedFlashcards = flashcards.map(fs => 
+          fs.$id === flashcardSet.$id 
+            ? { ...fs, cards: JSON.stringify(updatedCards) }
+            : fs
+        );
+        setFlashcards(updatedFlashcards);
+        
+        // Close edit modal if the deleted card was being edited
+        if (selectedFlashcardSet?.$id === flashcardSet.$id && selectedCardIndex === cardIndex) {
+          setShowEditFlashcardModal(false);
+          setSelectedFlashcardSet(null);
+          setSelectedCardIndex(null);
+        }
+        
+        toast.success("Card deleted successfully!");
+      } catch (err) {
+        toast.error("Failed to delete card");
+      }
     }
   };
 
@@ -1280,7 +1330,7 @@ export default function SpaceDashboard({ params }) {
                                         {cards.map((card, index) => (
                                           <div
                                             key={index}
-                                            className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-md"
+                                            className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-md group relative"
                                             role="button"
                                             tabIndex={0}
                                             onClick={() =>
@@ -1301,6 +1351,27 @@ export default function SpaceDashboard({ params }) {
                                               }
                                             }}
                                           >
+                                            <button
+                                              className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                              title="Delete card"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteIndividualCard(flashcardSet, index);
+                                              }}
+                                            >
+                                              <svg
+                                                className="h-4 w-4"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                              >
+                                                <path
+                                                  clipRule="evenodd"
+                                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                  fillRule="evenodd"
+                                                />
+                                              </svg>
+                                            </button>
                                             <p className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                                               <span className="text-xs px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 rounded">
                                                 Q

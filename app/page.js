@@ -78,13 +78,16 @@ export default function Login() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
           <form className="space-y-4" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                htmlFor="login-email"
+              >
                 Email
               </label>
               <input
-                id="login-email"
                 required
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                id="login-email"
                 placeholder="Enter your email"
                 type="email"
                 value={email}
@@ -92,13 +95,16 @@ export default function Login() {
               />
             </div>
             <div>
-              <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                htmlFor="login-password"
+              >
                 Password
               </label>
               <input
-                id="login-password"
                 required
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                id="login-password"
                 placeholder="Enter your password"
                 type="password"
                 value={password}
@@ -148,13 +154,16 @@ export default function Login() {
             <form onSubmit={handleRegister}>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="register-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    htmlFor="register-name"
+                  >
                     Full Name
                   </label>
                   <input
-                    id="register-name"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    id="register-name"
                     placeholder="Enter your full name"
                     type="text"
                     value={name}
@@ -162,13 +171,16 @@ export default function Login() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="register-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    htmlFor="register-email"
+                  >
                     Email
                   </label>
                   <input
-                    id="register-email"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    id="register-email"
                     placeholder="Enter your email"
                     type="email"
                     value={email}
@@ -176,13 +188,16 @@ export default function Login() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="register-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    htmlFor="register-password"
+                  >
                     Password
                   </label>
                   <input
-                    id="register-password"
                     required
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    id="register-password"
                     placeholder="Create a password"
                     type="password"
                     value={password}

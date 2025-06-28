@@ -119,6 +119,10 @@ export default function SpaceDashboard({ params }) {
     useState(false);
   const [storyboards, setStoryboards] = useState([]);
   const [isSavingStoryboard, setIsSavingStoryboard] = useState(false);
+  // Add state for editing flashcard values
+  const [editingQuestion, setEditingQuestion] = useState("");
+  const [editingAnswer, setEditingAnswer] = useState("");
+  const [isSavingFlashcard, setIsSavingFlashcard] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -528,6 +532,14 @@ export default function SpaceDashboard({ params }) {
   const handleCardClick = (flashcardSet, cardIndex) => {
     setSelectedFlashcardSet(flashcardSet);
     setSelectedCardIndex(cardIndex);
+    
+    // Initialize editing values
+    const cards = typeof flashcardSet.cards === "string"
+      ? JSON.parse(flashcardSet.cards)
+      : flashcardSet.cards;
+    
+    setEditingQuestion(cards[cardIndex].question);
+    setEditingAnswer(cards[cardIndex].answer);
     setShowEditFlashcardModal(true);
   };
 
@@ -1130,6 +1142,59 @@ export default function SpaceDashboard({ params }) {
     }
   };
 
+  const handleSaveFlashcard = async () => {
+    if (!selectedFlashcardSet || selectedCardIndex === null) return;
+
+    setIsSavingFlashcard(true);
+    try {
+      const cards = typeof selectedFlashcardSet.cards === "string"
+        ? JSON.parse(selectedFlashcardSet.cards)
+        : selectedFlashcardSet.cards;
+
+      const updatedCards = [...cards];
+      updatedCards[selectedCardIndex] = {
+        ...updatedCards[selectedCardIndex],
+        question: editingQuestion,
+        answer: editingAnswer,
+      };
+
+      // Update the flashcard set in the database
+      await databases.updateDocument(
+        DATABASE_ID,
+        FLASHCARDS_COLLECTION_ID,
+        selectedFlashcardSet.$id,
+        {
+          cards: JSON.stringify(updatedCards),
+        },
+      );
+
+      // Update local state
+      const updatedFlashcards = flashcards.map((fs) =>
+        fs.$id === selectedFlashcardSet.$id
+          ? { ...fs, cards: JSON.stringify(updatedCards) }
+          : fs,
+      );
+
+      setFlashcards(updatedFlashcards);
+      
+      // Close modal and show success message
+      closeEditModal();
+      toast.success("Flashcard updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update flashcard");
+    } finally {
+      setIsSavingFlashcard(false);
+    }
+  };
+
+  const closeEditModal = () => {
+    setShowEditFlashcardModal(false);
+    setSelectedFlashcardSet(null);
+    setSelectedCardIndex(null);
+    setEditingQuestion("");
+    setEditingAnswer("");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -1410,28 +1475,7 @@ export default function SpaceDashboard({ params }) {
                                             flashcardSet.createdAt,
                                           ).toLocaleDateString()}
                                         </span>
-                                        <button
-                                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1 group"
-                                          onClick={() =>
-                                            handleCardClick(flashcardSet, 0)
-                                          }
-                                        >
-                                          View All
-                                          <svg
-                                            className="h-4 w-4 transform group-hover:translate-x-0.5 transition-transform"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                          >
-                                            <path
-                                              d="M9 5l7 7-7 7"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                            />
-                                          </svg>
-                                        </button>
+                                 
                                       </div>
                                     </div>
                                   </div>
@@ -1953,8 +1997,7 @@ export default function SpaceDashboard({ params }) {
               <div className="flex justify-end gap-3">
                 <button
                   className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                  type="button"
-                  onClick={() => setShowEditChapterModal(false)}
+                  onClick={closeEditModal}
                 >
                   Cancel
                 </button>
@@ -2483,11 +2526,7 @@ export default function SpaceDashboard({ params }) {
                 </h2>
                 <button
                   className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  onClick={() => {
-                    setShowEditFlashcardModal(false);
-                    setSelectedFlashcardSet(null);
-                    setSelectedCardIndex(null);
-                  }}
+                  onClick={closeEditModal}
                 >
                   ✕
                 </button>
@@ -2505,15 +2544,8 @@ export default function SpaceDashboard({ params }) {
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                     id="edit-flashcard-question"
                     rows={4}
-                    value={(() => {
-                      const cards =
-                        typeof selectedFlashcardSet.cards === "string"
-                          ? JSON.parse(selectedFlashcardSet.cards)
-                          : selectedFlashcardSet.cards;
-
-                      return cards[selectedCardIndex].question;
-                    })()}
-                    onChange={(e) => handleEditCard("question", e.target.value)}
+                    value={editingQuestion}
+                    onChange={(e) => setEditingQuestion(e.target.value)}
                   />
                 </div>
                 <div>
@@ -2527,15 +2559,8 @@ export default function SpaceDashboard({ params }) {
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                     id="edit-flashcard-answer"
                     rows={6}
-                    value={(() => {
-                      const cards =
-                        typeof selectedFlashcardSet.cards === "string"
-                          ? JSON.parse(selectedFlashcardSet.cards)
-                          : selectedFlashcardSet.cards;
-
-                      return cards[selectedCardIndex].answer;
-                    })()}
-                    onChange={(e) => handleEditCard("answer", e.target.value)}
+                    value={editingAnswer}
+                    onChange={(e) => setEditingAnswer(e.target.value)}
                   />
                 </div>
               </div>
@@ -2543,13 +2568,16 @@ export default function SpaceDashboard({ params }) {
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                  onClick={() => {
-                    setShowEditFlashcardModal(false);
-                    setSelectedFlashcardSet(null);
-                    setSelectedCardIndex(null);
-                  }}
+                  onClick={closeEditModal}
                 >
-                  Close
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSaveFlashcard}
+                  disabled={isSavingFlashcard}
+                >
+                  {isSavingFlashcard ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

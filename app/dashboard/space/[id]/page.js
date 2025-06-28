@@ -123,6 +123,10 @@ export default function SpaceDashboard({ params }) {
   const [editingQuestion, setEditingQuestion] = useState("");
   const [editingAnswer, setEditingAnswer] = useState("");
   const [isSavingFlashcard, setIsSavingFlashcard] = useState(false);
+  // Add state for editing flashcard title
+  const [showEditTitleModal, setShowEditTitleModal] = useState(false);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -1194,6 +1198,48 @@ export default function SpaceDashboard({ params }) {
     setEditingAnswer("");
   };
 
+  const handleEditTitle = (flashcardSet) => {
+    setSelectedFlashcardSet(flashcardSet);
+    setEditingTitle(flashcardSet.title);
+    setShowEditTitleModal(true);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!selectedFlashcardSet) return;
+
+    setIsSavingTitle(true);
+    try {
+      // Update the flashcard set title in the database
+      await databases.updateDocument(
+        DATABASE_ID,
+        FLASHCARDS_COLLECTION_ID,
+        selectedFlashcardSet.$id,
+        {
+          title: editingTitle,
+        },
+      );
+
+      // Update local state
+      const updatedFlashcards = flashcards.map((fs) =>
+        fs.$id === selectedFlashcardSet.$id
+          ? { ...fs, title: editingTitle }
+          : fs,
+      );
+
+      setFlashcards(updatedFlashcards);
+      
+      // Close modal and show success message
+      setShowEditTitleModal(false);
+      setSelectedFlashcardSet(null);
+      setEditingTitle("");
+      toast.success("Flashcard title updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update flashcard title");
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -1364,9 +1410,34 @@ export default function SpaceDashboard({ params }) {
                                               {cards.length} cards
                                             </span>
                                           </div>
-                                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                            {flashcardSet.title}
-                                          </h3>
+                                          <div className="flex items-center gap-2">
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                              {flashcardSet.title}
+                                            </h3>
+                                            <button
+                                              className="p-1 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors opacity-0 group-hover:opacity-100"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditTitle(flashcardSet);
+                                              }}
+                                              title="Edit title"
+                                            >
+                                              <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                              >
+                                                <path
+                                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                />
+                                              </svg>
+                                            </button>
+                                          </div>
                                         </div>
                                         <button
                                           className="p-1.5 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
@@ -3551,6 +3622,68 @@ export default function SpaceDashboard({ params }) {
                 onClick={handleSaveStoryboard}
               >
                 {isSavingStoryboard ? "Saving..." : "Save Storyboard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Flashcard Title Modal */}
+      {showEditTitleModal && selectedFlashcardSet && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Edit Flashcard Title
+              </h2>
+              <button
+                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                onClick={() => {
+                  setShowEditTitleModal(false);
+                  setSelectedFlashcardSet(null);
+                  setEditingTitle("");
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+                  htmlFor="edit-flashcard-title"
+                >
+                  Title
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  id="edit-flashcard-title"
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  placeholder="Enter flashcard title"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                onClick={() => {
+                  setShowEditTitleModal(false);
+                  setSelectedFlashcardSet(null);
+                  setEditingTitle("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSaveTitle}
+                disabled={isSavingTitle || !editingTitle.trim()}
+              >
+                {isSavingTitle ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

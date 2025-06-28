@@ -558,13 +558,6 @@ export default function SpaceDashboard({ params }) {
     setSummarySaveError("");
     setSummarySaveSuccess(false);
 
-    // Log the values we're about to save
-    console.log('Saving summary with:', {
-      chapterId: selectedChapter.$id,
-      spaceId: spaceId,
-      url: summaryUrlInput
-    });
-
     try {
       const databases = new Databases(client);
       
@@ -577,18 +570,12 @@ export default function SpaceDashboard({ params }) {
         createdAt: new Date().toISOString()
       };
 
-      // Log the data we're sending to Appwrite
-      console.log('Summary data to save:', summaryData);
-
       const result = await databases.createDocument(
         DATABASE_ID,
         'summaries',
         ID.unique(),
         summaryData
       );
-
-      // Log the result from Appwrite
-      console.log('Summary save result:', result);
 
       setSummarySaveSuccess(true);
       // Refresh summaries after saving
@@ -602,7 +589,6 @@ export default function SpaceDashboard({ params }) {
         setSummarySaveSuccess(false);
       }, 1500);
     } catch (err) {
-      console.error('Error saving summary:', err);
       setSummarySaveError(err.message || "Failed to save summary.");
     } finally {
       setSummarySaveLoading(false);
@@ -621,7 +607,6 @@ export default function SpaceDashboard({ params }) {
       await fetchSummaries(selectedChapter.$id);
       toast.success('Summary deleted successfully');
     } catch (err) {
-      console.error('Error deleting summary:', err);
       toast.error('Failed to delete summary');
     }
   };
@@ -642,22 +627,12 @@ export default function SpaceDashboard({ params }) {
       });
 
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
 
       // Parse the JSON response
       const data = JSON.parse(responseText);
-      console.log('Parsed quiz data:', data);
-      console.log('Data structure check:', {
-        hasData: !!data.data,
-        hasQuiz: !!data.data?.quiz,
-        hasQuestions: !!data.data?.quiz?.questions,
-        questionsLength: data.data?.quiz?.questions?.length,
-        questionsType: typeof data.data?.quiz?.questions
-      });
 
       // Check for the nested data structure
       if (!data.data || !data.data.quiz || !data.data.quiz.questions) {
-        console.error('Invalid data structure:', data);
         throw new Error('Invalid quiz data structure');
       }
 
@@ -667,7 +642,6 @@ export default function SpaceDashboard({ params }) {
       setShowQuizPreviewModal(true);
       toast.success('Quiz generated successfully!');
     } catch (err) {
-      console.error('Error generating quiz:', err);
       toast.error(err.message || 'Failed to generate quiz');
     } finally {
       setIsGeneratingQuiz(false);
@@ -702,7 +676,6 @@ export default function SpaceDashboard({ params }) {
       setShowQuizPreviewModal(false);
       setGeneratedQuiz([]);
     } catch (error) {
-      console.error('Error saving quiz:', error);
       toast.error('Failed to save quiz');
     }
   };
@@ -718,7 +691,6 @@ export default function SpaceDashboard({ params }) {
         duration: durationLabel,
         voice_id: audiobookVoice
       };
-      console.log('Audiobook payload:', payload);
       const response = await fetch('https://prospace-4d2a452088b6.herokuapp.com/audiobook-to-audio', {
         method: 'POST',
         headers: {
@@ -727,7 +699,6 @@ export default function SpaceDashboard({ params }) {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      console.log('Audiobook generation response:', data);
       if (data.status === 'success' && data.data && data.data.audio_url) {
         const backendBase = "http://127.0.0.1:5000";
         const audioUrl = data.data.audio_url.startsWith("/")
@@ -742,7 +713,6 @@ export default function SpaceDashboard({ params }) {
         throw new Error(data.message || 'Failed to generate audiobook');
       }
     } catch (error) {
-      console.error('Error generating audiobook:', error);
       toast.error('Failed to generate audiobook');
     } finally {
       setIsGeneratingAudiobook(false);
@@ -763,21 +733,13 @@ export default function SpaceDashboard({ params }) {
         ID.unique(),
         new File([audioBlob], fileName, { type: 'audio/mpeg' })
       );
-      console.log('File upload result:', file);
-      console.log('File ID:', file.$id);
       // Try generating the file URL in multiple ways
       const fileViewObj = storage.getFileView(AUDIOBOOKS_BUCKET_ID, file.$id);
       const fileDownloadObj = storage.getFileDownload(AUDIOBOOKS_BUCKET_ID, file.$id);
-      console.log('getFileView object:', fileViewObj);
-      console.log('getFileDownload object:', fileDownloadObj);
       const fileUrlViewHref = fileViewObj?.href;
       const fileUrlViewString = fileViewObj?.toString();
       const fileUrlDownloadHref = fileDownloadObj?.href;
       const fileUrlDownloadString = fileDownloadObj?.toString();
-      console.log('fileUrlViewHref:', fileUrlViewHref);
-      console.log('fileUrlViewString:', fileUrlViewString);
-      console.log('fileUrlDownloadHref:', fileUrlDownloadHref);
-      console.log('fileUrlDownloadString:', fileUrlDownloadString);
       // Prefer fileUrlViewHref, fallback to fileUrlViewString, then download links
       const fileUrl = fileUrlViewHref || fileUrlViewString || fileUrlDownloadHref || fileUrlDownloadString;
       if (!fileUrl) throw new Error('Failed to generate file URL');
@@ -939,13 +901,12 @@ export default function SpaceDashboard({ params }) {
   };
 
   async function handleDeleteStoryboard(storyboardId) {
-    if (!window.confirm('Are you sure you want to delete this storyboard?')) return;
+    if (typeof window !== 'undefined' && !window.confirm('Are you sure you want to delete this storyboard?')) return;
     try {
       await databases.deleteDocument(DATABASE_ID, STORYBOARDS_COLLECTION_ID, storyboardId);
       toast.success('Storyboard deleted successfully!');
       setStoryboards(storyboards.filter(item => item.$id !== storyboardId));
     } catch (error) {
-      console.error('Error deleting storyboard:', error);
       toast.error('Failed to delete storyboard.');
     }
   }

@@ -129,6 +129,11 @@ export default function SpaceDashboard({ params }) {
   const [showEditTitleModal, setShowEditTitleModal] = useState(false);
   const [editingTitle, setEditingTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  // Add state for editing quiz title
+  const [showEditQuizTitleModal, setShowEditQuizTitleModal] = useState(false);
+  const [editingQuizTitle, setEditingQuizTitle] = useState("");
+  const [isSavingQuizTitle, setIsSavingQuizTitle] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
   // Add state for custom delete confirmation modal
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [flashcardToDelete, setFlashcardToDelete] = useState(null);
@@ -1294,6 +1299,48 @@ export default function SpaceDashboard({ params }) {
     }
   };
 
+  const handleEditQuizTitle = (quiz) => {
+    setSelectedQuiz(quiz);
+    setEditingQuizTitle(quiz.title);
+    setShowEditQuizTitleModal(true);
+  };
+
+  const handleSaveQuizTitle = async () => {
+    if (!selectedQuiz) return;
+
+    setIsSavingQuizTitle(true);
+    try {
+      // Update the quiz title in the database
+      await databases.updateDocument(
+        DATABASE_ID,
+        QUIZZES_COLLECTION_ID,
+        selectedQuiz.$id,
+        {
+          title: editingQuizTitle,
+        },
+      );
+
+      // Update local state
+      const updatedQuizzes = quizzes.map((q) =>
+        q.$id === selectedQuiz.$id
+          ? { ...q, title: editingQuizTitle }
+          : q,
+      );
+
+      setQuizzes(updatedQuizzes);
+      
+      // Close modal and show success message
+      setShowEditQuizTitleModal(false);
+      setSelectedQuiz(null);
+      setEditingQuizTitle("");
+      toast.success("Quiz title updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update quiz title");
+    } finally {
+      setIsSavingQuizTitle(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -1733,9 +1780,31 @@ export default function SpaceDashboard({ params }) {
                                   <div className="p-6">
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                          {quiz.title}
-                                        </h3>
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {quiz.title}
+                                          </h3>
+                                          <button
+                                            className="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                            onClick={() => handleEditQuizTitle(quiz)}
+                                            title="Edit quiz title"
+                                          >
+                                            <svg
+                                              className="h-4 w-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                              xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                              <path
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                              />
+                                            </svg>
+                                          </button>
+                                        </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                                           {quiz.description}
                                         </p>
@@ -3761,6 +3830,68 @@ export default function SpaceDashboard({ params }) {
                 disabled={isSavingTitle || !editingTitle.trim()}
               >
                 {isSavingTitle ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Quiz Title Modal */}
+      {showEditQuizTitleModal && selectedQuiz && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Edit Quiz Title
+              </h2>
+              <button
+                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                onClick={() => {
+                  setShowEditQuizTitleModal(false);
+                  setSelectedQuiz(null);
+                  setEditingQuizTitle("");
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+                  htmlFor="edit-quiz-title"
+                >
+                  Title
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  id="edit-quiz-title"
+                  type="text"
+                  value={editingQuizTitle}
+                  onChange={(e) => setEditingQuizTitle(e.target.value)}
+                  placeholder="Enter quiz title"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                onClick={() => {
+                  setShowEditQuizTitleModal(false);
+                  setSelectedQuiz(null);
+                  setEditingQuizTitle("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSaveQuizTitle}
+                disabled={isSavingQuizTitle || !editingQuizTitle.trim()}
+              >
+                {isSavingQuizTitle ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

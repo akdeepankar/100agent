@@ -30,7 +30,7 @@ export default function Login() {
       // Create email session
       await account.createEmailPasswordSession(email, password);
       // Redirect to dashboard
-      router.push("/");
+      router.push("/dashboard");
     } catch (error) {
       setError(error.message || "Failed to login. Please try again.");
     } finally {
@@ -52,7 +52,7 @@ export default function Login() {
       await account.createEmailPasswordSession(email, password);
       setSuccess("Registration successful! Redirecting...");
       // Redirect to dashboard
-      router.push("/");
+      router.push("/dashboard");
     } catch (error) {
       setError(error.message || "Failed to register. Please try again.");
     } finally {

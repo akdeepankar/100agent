@@ -1666,6 +1666,7 @@ export default function SpaceDashboard({ params }) {
                                       {ab.fileUrl && (
                                         <audio controls className="w-full">
                                           <source src={ab.fileUrl} type="audio/mpeg" />
+                                          <track kind="captions" src="" label="No captions available" />
                                           Your browser does not support the
                                           audio element.
                                         </audio>
@@ -3214,6 +3215,7 @@ export default function SpaceDashboard({ params }) {
             </h2>
             <audio controls className="w-full mb-4">
               <source src={generatedAudioUrl} type="audio/mpeg" />
+              <track kind="captions" src="" label="No captions available" />
               Your browser does not support the audio element.
             </audio>
             {generatedAudioScript && (

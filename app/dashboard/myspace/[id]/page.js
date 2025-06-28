@@ -1498,6 +1498,7 @@ export default function UserSpacePage({ params }) {
             {selectedAudiobook.fileUrl && (
               <audio controls className="w-full mb-4">
                 <source src={selectedAudiobook.fileUrl} type="audio/mpeg" />
+                <track kind="captions" src="" label="No captions available" />
                 Your browser does not support the audio element.
               </audio>
             )}

@@ -292,6 +292,7 @@ export default function UserSpacePage({ params }) {
   const [space, setSpace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('latest-updates');
   const [showChaptersList, setShowChaptersList] = useState(false);
   const [chapters, setChapters] = useState([]);

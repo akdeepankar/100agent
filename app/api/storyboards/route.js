@@ -4,6 +4,21 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
+    // Validate required fields
+    if (!body.description) {
+      return NextResponse.json(
+        { status: 'error', message: 'Description is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.number_of_boards) {
+      return NextResponse.json(
+        { status: 'error', message: 'Number of boards is required' },
+        { status: 400 }
+      );
+    }
+    
     // Proxy the request to the Heroku backend
     const response = await fetch('https://prospace-4d2a452088b6.herokuapp.com/generate-storyboards', {
       method: 'POST',

@@ -306,8 +306,7 @@ export default function SpaceDashboard({ params }) {
     setError(""); // Clear any previous errors
     try {
       // First check if the API is accessible
-      const apiUrl =
-        "https://prospace-4d2a452088b6.herokuapp.com/generate-flashcards";
+      const apiUrl = "/api/flashcards";
 
       // Increase timeout to 90 seconds
       const controller = new AbortController();
@@ -395,7 +394,7 @@ export default function SpaceDashboard({ params }) {
         );
       } else if (err.message.includes("Failed to fetch")) {
         setError(
-          "Could not connect to the API server. Please ensure it is running at http://127.0.0.1:5000 and CORS is enabled.",
+          "Could not connect to the flashcard generation service. Please try again later.",
         );
       } else {
         setError(
@@ -708,7 +707,7 @@ export default function SpaceDashboard({ params }) {
     try {
       setIsGeneratingQuiz(true);
       const response = await fetch(
-        "https://prospace-4d2a452088b6.herokuapp.com/generate-quiz",
+        "/api/quiz",
         {
           method: "POST",
           headers: {
@@ -1009,7 +1008,7 @@ export default function SpaceDashboard({ params }) {
     setIsGeneratingStoryboard(true);
     try {
       const response = await fetch(
-        "https://prospace-4d2a452088b6.herokuapp.com/generate-storyboards",
+        "/api/storyboards",
         {
           method: "POST",
           headers: {
@@ -1115,7 +1114,7 @@ export default function SpaceDashboard({ params }) {
       };
       
       const response = await fetch(
-        "https://prospace-4d2a452088b6.herokuapp.com/audiobook-to-audio",
+        "/api/audiobook",
         {
           method: "POST",
           headers: {
@@ -2600,7 +2599,7 @@ export default function SpaceDashboard({ params }) {
                 setSummaryResult("");
                 try {
                   const res = await fetch(
-                    "https://prospace-4d2a452088b6.herokuapp.com/generate-summary",
+                    "/api/summary",
                     {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },

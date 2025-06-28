@@ -78,6 +78,8 @@ export default function SpaceDashboard({ params }) {
   const [summarySaveLoading, setSummarySaveLoading] = useState(false);
   const [summarySaveError, setSummarySaveError] = useState("");
   const [summarySaveSuccess, setSummarySaveSuccess] = useState(false);
+  // Add state for summary title
+  const [summaryTitle, setSummaryTitle] = useState("");
   const [summaries, setSummaries] = useState([]);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedSummary, setSelectedSummary] = useState(null);
@@ -127,6 +129,14 @@ export default function SpaceDashboard({ params }) {
   const [showEditTitleModal, setShowEditTitleModal] = useState(false);
   const [editingTitle, setEditingTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  // Add state for custom delete confirmation modal
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [flashcardToDelete, setFlashcardToDelete] = useState(null);
+  const [isDeletingFlashcard, setIsDeletingFlashcard] = useState(false);
+  // Add state for individual card deletion confirmation modal
+  const [showDeleteCardConfirmModal, setShowDeleteCardConfirmModal] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState(null);
+  const [isDeletingCard, setIsDeletingCard] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -587,62 +597,99 @@ export default function SpaceDashboard({ params }) {
   };
 
   const handleDeleteFlashcard = async (flashcardSetId) => {
-    if (typeof window !== "undefined" && window.confirm("Are you sure you want to delete this flashcard set?")) {
-      try {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          FLASHCARDS_COLLECTION_ID,
-          flashcardSetId,
-        );
-        
-        // Update local state
-        setFlashcards(flashcards.filter(fs => fs.$id !== flashcardSetId));
-        toast.success("Flashcard set deleted successfully!");
-      } catch (err) {
-        toast.error("Failed to delete flashcard set");
-      }
+    // Find the flashcard set to delete
+    const flashcardSet = flashcards.find(fs => fs.$id === flashcardSetId);
+    if (flashcardSet) {
+      setFlashcardToDelete(flashcardSet);
+      setShowDeleteConfirmModal(true);
+    }
+  };
+
+  const confirmDeleteFlashcard = async () => {
+    if (!flashcardToDelete) return;
+
+    setIsDeletingFlashcard(true);
+    try {
+      await databases.deleteDocument(
+        DATABASE_ID,
+        FLASHCARDS_COLLECTION_ID,
+        flashcardToDelete.$id,
+      );
+      
+      // Update local state
+      setFlashcards(flashcards.filter(fs => fs.$id !== flashcardToDelete.$id));
+      toast.success("Flashcard set deleted successfully!");
+      
+      // Close modal and reset state
+      setShowDeleteConfirmModal(false);
+      setFlashcardToDelete(null);
+    } catch (err) {
+      toast.error("Failed to delete flashcard set");
+    } finally {
+      setIsDeletingFlashcard(false);
     }
   };
 
   const handleDeleteIndividualCard = async (flashcardSet, cardIndex) => {
-    if (typeof window !== "undefined" && window.confirm("Are you sure you want to delete this card?")) {
-      try {
-        const cards = typeof flashcardSet.cards === "string" 
-          ? JSON.parse(flashcardSet.cards) 
-          : flashcardSet.cards;
-        
-        // Remove the card at the specified index
-        const updatedCards = cards.filter((_, index) => index !== cardIndex);
-        
-        // Update the database
-        await databases.updateDocument(
-          DATABASE_ID,
-          FLASHCARDS_COLLECTION_ID,
-          flashcardSet.$id,
-          {
-            cards: JSON.stringify(updatedCards),
-          },
-        );
-        
-        // Update local state
-        const updatedFlashcards = flashcards.map(fs => 
-          fs.$id === flashcardSet.$id 
-            ? { ...fs, cards: JSON.stringify(updatedCards) }
-            : fs
-        );
-        setFlashcards(updatedFlashcards);
-        
-        // Close edit modal if the deleted card was being edited
-        if (selectedFlashcardSet?.$id === flashcardSet.$id && selectedCardIndex === cardIndex) {
-          setShowEditFlashcardModal(false);
-          setSelectedFlashcardSet(null);
-          setSelectedCardIndex(null);
-        }
-        
-        toast.success("Card deleted successfully!");
-      } catch (err) {
-        toast.error("Failed to delete card");
+    const cards = typeof flashcardSet.cards === "string" 
+      ? JSON.parse(flashcardSet.cards) 
+      : flashcardSet.cards;
+    
+    setCardToDelete({
+      flashcardSet,
+      cardIndex,
+      card: cards[cardIndex]
+    });
+    setShowDeleteCardConfirmModal(true);
+  };
+
+  const confirmDeleteIndividualCard = async () => {
+    if (!cardToDelete) return;
+
+    setIsDeletingCard(true);
+    try {
+      const { flashcardSet, cardIndex } = cardToDelete;
+      const cards = typeof flashcardSet.cards === "string" 
+        ? JSON.parse(flashcardSet.cards) 
+        : flashcardSet.cards;
+      
+      // Remove the card at the specified index
+      const updatedCards = cards.filter((_, index) => index !== cardIndex);
+      
+      // Update the database
+      await databases.updateDocument(
+        DATABASE_ID,
+        FLASHCARDS_COLLECTION_ID,
+        flashcardSet.$id,
+        {
+          cards: JSON.stringify(updatedCards),
+        },
+      );
+      
+      // Update local state
+      const updatedFlashcards = flashcards.map(fs => 
+        fs.$id === flashcardSet.$id 
+          ? { ...fs, cards: JSON.stringify(updatedCards) }
+          : fs
+      );
+      setFlashcards(updatedFlashcards);
+      
+      // Close edit modal if the deleted card was being edited
+      if (selectedFlashcardSet?.$id === flashcardSet.$id && selectedCardIndex === cardIndex) {
+        setShowEditFlashcardModal(false);
+        setSelectedFlashcardSet(null);
+        setSelectedCardIndex(null);
       }
+      
+      toast.success("Card deleted successfully!");
+      
+      // Close modal and reset state
+      setShowDeleteCardConfirmModal(false);
+      setCardToDelete(null);
+    } catch (err) {
+      toast.error("Failed to delete card");
+    } finally {
+      setIsDeletingCard(false);
     }
   };
 
@@ -653,14 +700,20 @@ export default function SpaceDashboard({ params }) {
       return;
     }
 
+    if (!summaryTitle.trim()) {
+      setSummarySaveError("Please enter a title for the summary");
+      return;
+    }
+
     setSummarySaveLoading(true);
     setSummarySaveError("");
     setSummarySaveSuccess(false);
 
     try {
       const databases = new Databases(client);
-
+      
       const summaryData = {
+        title: summaryTitle.trim(),
         summary: summary,
         url: summaryUrlInput,
         spaceId: spaceId,
@@ -685,6 +738,7 @@ export default function SpaceDashboard({ params }) {
         setSummaryUrlInput("");
         setSummaryResult("");
         setSummaryError("");
+        setSummaryTitle("");
         setSummarySaveSuccess(false);
       }, 1500);
     } catch (err) {
@@ -1603,6 +1657,9 @@ export default function SpaceDashboard({ params }) {
                                           ).toLocaleDateString()}
                                         </span>
                                       </div>
+                                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                                        {summary.title || "Untitled Summary"}
+                                      </h3>
                                       <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-3">
                                         {summary.summary}
                                       </p>
@@ -2718,6 +2775,7 @@ export default function SpaceDashboard({ params }) {
                     setSummaryUrlInput("");
                     setSummaryResult("");
                     setSummaryError("");
+                    setSummaryTitle("");
                   }}
                 >
                   Cancel
@@ -2748,9 +2806,25 @@ export default function SpaceDashboard({ params }) {
             )}
             {summaryResult && (
               <div className="mt-4 flex flex-col items-end gap-2">
+                <div className="w-full mb-4">
+                  <label
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+                    htmlFor="summary-title"
+                  >
+                    Summary Title
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-slate-700 dark:text-white"
+                    id="summary-title"
+                    placeholder="Enter a title for this summary"
+                    type="text"
+                    value={summaryTitle}
+                    onChange={(e) => setSummaryTitle(e.target.value)}
+                  />
+                </div>
                 <button
                   className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-md"
-                  disabled={summarySaveLoading}
+                  disabled={summarySaveLoading || !summaryTitle.trim()}
                   onClick={async () => await handleSaveSummary(summaryResult)}
                 >
                   {summarySaveLoading
@@ -2823,6 +2897,9 @@ export default function SpaceDashboard({ params }) {
                 </a>
               </div>
               <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  {selectedSummary.title || "Untitled Summary"}
+                </h3>
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
                   {selectedSummary.summary}
                 </p>
@@ -3684,6 +3761,128 @@ export default function SpaceDashboard({ params }) {
                 disabled={isSavingTitle || !editingTitle.trim()}
               >
                 {isSavingTitle ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Flashcard Set Confirmation Modal */}
+      {showDeleteConfirmModal && flashcardToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                <svg
+                  className="h-6 w-6 text-red-600 dark:text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Delete Flashcard Set
+              </h2>
+            </div>
+
+            <p className="text-slate-600 dark:text-slate-300 mb-6">
+              Are you sure you want to delete <strong>"{flashcardToDelete.title}"</strong>? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setFlashcardToDelete(null);
+                }}
+                disabled={isDeletingFlashcard}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={confirmDeleteFlashcard}
+                disabled={isDeletingFlashcard}
+              >
+                {isDeletingFlashcard ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Individual Card Confirmation Modal */}
+      {showDeleteCardConfirmModal && cardToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                <svg
+                  className="h-6 w-6 text-red-600 dark:text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Delete Card
+              </h2>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-3">
+                Are you sure you want to delete this card?
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+                  Question:
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                  {cardToDelete.card.question}
+                </p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+                  Answer:
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  {cardToDelete.card.answer}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                onClick={() => {
+                  setShowDeleteCardConfirmModal(false);
+                  setCardToDelete(null);
+                }}
+                disabled={isDeletingCard}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={confirmDeleteIndividualCard}
+                disabled={isDeletingCard}
+              >
+                {isDeletingCard ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

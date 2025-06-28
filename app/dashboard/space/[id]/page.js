@@ -3794,7 +3794,7 @@ export default function SpaceDashboard({ params }) {
             </div>
 
             <p className="text-slate-600 dark:text-slate-300 mb-6">
-              Are you sure you want to delete <strong>"{flashcardToDelete.title}"</strong>? This action cannot be undone.
+              Are you sure you want to delete <strong>&ldquo;{flashcardToDelete.title}&rdquo;</strong>? This action cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3">

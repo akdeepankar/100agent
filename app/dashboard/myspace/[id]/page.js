@@ -499,6 +499,14 @@ export default function UserSpacePage({ params }) {
             ]
         );
         
+        // Refresh the web notes list to show the newly saved note
+        const updatedWebNotesRes = await databases.listDocuments(
+            DATABASE_ID, 
+            WEB_NOTES_COLLECTION_ID, 
+            [Query.equal('userId', userId)]
+        );
+        setWebNotes(updatedWebNotesRes.documents);
+        
         toast.success('Notes saved successfully!');
         setShowNotesModal(false); // Close modal on success
     } catch (error) {

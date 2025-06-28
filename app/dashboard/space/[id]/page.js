@@ -783,11 +783,25 @@ export default function SpaceDashboard({ params }) {
       const data = await response.json();
       console.log("Response data:", data);
 
-      if (data.status === "success" && data.data && data.data.audio_url) {
-        const backendBase = "https://prospace-4d2a452088b6.herokuapp.com/";
-        const audioUrl = data.data.audio_url.startsWith("/")
-          ? backendBase + data.data.audio_url
-          : data.data.audio_url;
+      if (data.status === "success" && data.data) {
+        // Try different audio URL sources from the backend response
+        let audioUrl;
+        
+        if (data.data.audio_url) {
+          // Use the audio_url directly from the backend response
+          audioUrl = data.data.audio_url.startsWith("http") 
+            ? data.data.audio_url 
+            : `https://prospace-4d2a452088b6.herokuapp.com${data.data.audio_url}`;
+        } else if (data.data.audio_file) {
+          // Fallback to audio_file field
+          audioUrl = `https://prospace-4d2a452088b6.herokuapp.com/audio/${data.data.audio_file}`;
+        } else {
+          throw new Error("No audio file URL found in response");
+        }
+
+        console.log("Constructed audio URL:", audioUrl);
+        console.log("Original audio_url from backend:", data.data.audio_url);
+        console.log("Audio file from backend:", data.data.audio_file);
 
         setGeneratedAudiobook(audioUrl); // for backward compatibility
         setGeneratedAudioUrl(audioUrl);

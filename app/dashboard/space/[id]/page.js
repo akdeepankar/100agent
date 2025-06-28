@@ -784,7 +784,7 @@ export default function SpaceDashboard({ params }) {
       console.log("Response data:", data);
 
       if (data.status === "success" && data.data && data.data.audio_url) {
-        const backendBase = "http://127.0.0.1:5000";
+        const backendBase = "https://prospace-4d2a452088b6.herokuapp.com/";
         const audioUrl = data.data.audio_url.startsWith("/")
           ? backendBase + data.data.audio_url
           : data.data.audio_url;

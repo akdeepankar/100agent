@@ -339,7 +339,6 @@ export default function UserSpacePage({ params }) {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showChatCardModal, setShowChatCardModal] = useState(false);
   const [selectedChatCard, setSelectedChatCard] = useState(null);
-  const brainstormChatRef = useRef(null);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -374,11 +373,6 @@ export default function UserSpacePage({ params }) {
     fetchData();
   }, [spaceId]);
 
-  useEffect(() => {
-    if (brainstormChatRef.current) {
-      brainstormChatRef.current.scrollTop = brainstormChatRef.current.scrollHeight;
-    }
-  }, [brainstormChatHistory]);
 
   const handleChapterClick = async (chapter) => {
     setSelectedChapter(chapter);
@@ -574,44 +568,6 @@ export default function UserSpacePage({ params }) {
     }
   };
 
-  const handleCardIdeas = async (card) => {
-    setIdeasCard(card);
-    setShowBrainstormIdeasModal(true);
-    setIdeasResult(null);
-    setIdeasError('');
-    setIdeasLoading(true);
-    try {
-      const response = await fetch('https://prospace-4d2a452088b6.herokuapp.com/brainstorm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: card.note })
-      });
-      const data = await response.json();
-      if (response.ok && data.status === 'success' && data.data && Array.isArray(data.data.ideas)) {
-        setIdeasResult(data.data.ideas);
-      } else {
-        setIdeasError(data.message || 'No ideas found');
-      }
-    } catch (err) {
-      setIdeasError('Failed to brainstorm: ' + err.message);
-    } finally {
-      setIdeasLoading(false);
-    }
-  };
-
-  const handleSendBrainstormMessage = () => {
-    if (brainstormChatMessage.trim() && currentUser) {
-      const newMessage = {
-        sender: currentUser.name,
-        text: brainstormChatMessage,
-        timestamp: new Date(),
-        id: Date.now(), // temporary id
-      };
-      setBrainstormChatHistory((prev) => [...prev, newMessage]);
-      setBrainstormChatMessage('');
-      // In a real app, you'd send this to a backend/Appwrite Realtime
-    }
-  };
 
   if (loading) {
     return (

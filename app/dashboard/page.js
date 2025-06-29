@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Client, Account, Teams, Functions } from "appwrite";
+import { Client, Account, Teams, Functions, Databases, Query } from "appwrite";
 import { useRouter } from "next/navigation";
 import React from "react";
 import {
@@ -25,6 +25,15 @@ const client = new Client()
 const account = new Account(client);
 const teams = new Teams(client);
 const functions = new Functions(client);
+const databases = new Databases(client);
+
+// Database and Collection IDs
+const DATABASE_ID = "learning_spaces";
+const CHAPTERS_COLLECTION_ID = "chapters";
+const FLASHCARDS_COLLECTION_ID = "flashcards";
+const STORYBOARDS_COLLECTION_ID = "storyboards";
+const QUIZZES_COLLECTION_ID = "quizzes";
+const SUMMARIES_COLLECTION_ID = "summaries";
 
 export default function TeacherDashboard() {
   const router = useRouter();
@@ -48,6 +57,12 @@ export default function TeacherDashboard() {
   const [joinSuccess, setJoinSuccess] = useState("");
   const [selected, setSelected] = React.useState("manage");
   const [showJoinCard, setShowJoinCard] = useState(false);
+  const [chapterCounts, setChapterCounts] = useState({});
+  const [flashcardCounts, setFlashcardCounts] = useState({});
+  const [storyboardCounts, setStoryboardCounts] = useState({});
+  const [quizCounts, setQuizCounts] = useState({});
+  const [summaryCounts, setSummaryCounts] = useState({});
+  const [isCreatingSpace, setIsCreatingSpace] = useState(false);
   const joinModal = useDisclosure();
 
   useEffect(() => {
@@ -90,6 +105,217 @@ export default function TeacherDashboard() {
     return memberships.some((m) => m.userId === user?.$id);
   };
 
+  // Fetch chapter counts for spaces
+  const fetchChapterCounts = async (spaceIds) => {
+    try {
+      const chapterCountPromises = spaceIds.map(async (spaceId) => {
+        try {
+          const response = await databases.listDocuments(
+            DATABASE_ID,
+            CHAPTERS_COLLECTION_ID,
+            [Query.equal("spaceId", spaceId)]
+          );
+          return { spaceId, count: response.documents.length };
+        } catch (error) {
+          console.error(`Error fetching chapters for space ${spaceId}:`, error);
+          return { spaceId, count: 0 };
+        }
+      });
+
+      const counts = await Promise.all(chapterCountPromises);
+      const countsMap = Object.fromEntries(
+        counts.map(({ spaceId, count }) => [spaceId, count])
+      );
+      setChapterCounts(countsMap);
+    } catch (error) {
+      console.error("Error fetching chapter counts:", error);
+    }
+  };
+
+  // Fetch flashcard counts for spaces
+  const fetchFlashcardCounts = async (spaceIds) => {
+    try {
+      const flashcardCountPromises = spaceIds.map(async (spaceId) => {
+        try {
+          // First get all chapters for this space
+          const chaptersResponse = await databases.listDocuments(
+            DATABASE_ID,
+            CHAPTERS_COLLECTION_ID,
+            [Query.equal("spaceId", spaceId)]
+          );
+          
+          // Then get flashcard count for all chapters in this space
+          const flashcardPromises = chaptersResponse.documents.map(async (chapter) => {
+            try {
+              const flashcardResponse = await databases.listDocuments(
+                DATABASE_ID,
+                FLASHCARDS_COLLECTION_ID,
+                [Query.equal("chapterId", chapter.$id)]
+              );
+              return flashcardResponse.documents.length;
+            } catch (error) {
+              return 0;
+            }
+          });
+          
+          const flashcardCounts = await Promise.all(flashcardPromises);
+          const totalFlashcards = flashcardCounts.reduce((sum, count) => sum + count, 0);
+          
+          return { spaceId, count: totalFlashcards };
+        } catch (error) {
+          console.error(`Error fetching flashcards for space ${spaceId}:`, error);
+          return { spaceId, count: 0 };
+        }
+      });
+
+      const counts = await Promise.all(flashcardCountPromises);
+      const countsMap = Object.fromEntries(
+        counts.map(({ spaceId, count }) => [spaceId, count])
+      );
+      setFlashcardCounts(countsMap);
+    } catch (error) {
+      console.error("Error fetching flashcard counts:", error);
+    }
+  };
+
+  // Fetch storyboard counts for spaces
+  const fetchStoryboardCounts = async (spaceIds) => {
+    try {
+      const storyboardCountPromises = spaceIds.map(async (spaceId) => {
+        try {
+          // First get all chapters for this space
+          const chaptersResponse = await databases.listDocuments(
+            DATABASE_ID,
+            CHAPTERS_COLLECTION_ID,
+            [Query.equal("spaceId", spaceId)]
+          );
+          
+          // Then get storyboard count for all chapters in this space
+          const storyboardPromises = chaptersResponse.documents.map(async (chapter) => {
+            try {
+              const storyboardResponse = await databases.listDocuments(
+                DATABASE_ID,
+                STORYBOARDS_COLLECTION_ID,
+                [Query.equal("chapterId", chapter.$id)]
+              );
+              return storyboardResponse.documents.length;
+            } catch (error) {
+              return 0;
+            }
+          });
+          
+          const storyboardCounts = await Promise.all(storyboardPromises);
+          const totalStoryboards = storyboardCounts.reduce((sum, count) => sum + count, 0);
+          
+          return { spaceId, count: totalStoryboards };
+        } catch (error) {
+          console.error(`Error fetching storyboards for space ${spaceId}:`, error);
+          return { spaceId, count: 0 };
+        }
+      });
+
+      const counts = await Promise.all(storyboardCountPromises);
+      const countsMap = Object.fromEntries(
+        counts.map(({ spaceId, count }) => [spaceId, count])
+      );
+      setStoryboardCounts(countsMap);
+    } catch (error) {
+      console.error("Error fetching storyboard counts:", error);
+    }
+  };
+
+  // Fetch quiz counts for spaces
+  const fetchQuizCounts = async (spaceIds) => {
+    try {
+      const quizCountPromises = spaceIds.map(async (spaceId) => {
+        try {
+          // First get all chapters for this space
+          const chaptersResponse = await databases.listDocuments(
+            DATABASE_ID,
+            CHAPTERS_COLLECTION_ID,
+            [Query.equal("spaceId", spaceId)]
+          );
+          
+          // Then get quiz count for all chapters in this space
+          const quizPromises = chaptersResponse.documents.map(async (chapter) => {
+            try {
+              const quizResponse = await databases.listDocuments(
+                DATABASE_ID,
+                QUIZZES_COLLECTION_ID,
+                [Query.equal("chapterId", chapter.$id), Query.equal("spaceId", spaceId)]
+              );
+              return quizResponse.documents.length;
+            } catch (error) {
+              return 0;
+            }
+          });
+          
+          const quizCounts = await Promise.all(quizPromises);
+          const totalQuizzes = quizCounts.reduce((sum, count) => sum + count, 0);
+          
+          return { spaceId, count: totalQuizzes };
+        } catch (error) {
+          console.error(`Error fetching quizzes for space ${spaceId}:`, error);
+          return { spaceId, count: 0 };
+        }
+      });
+
+      const counts = await Promise.all(quizCountPromises);
+      const countsMap = Object.fromEntries(
+        counts.map(({ spaceId, count }) => [spaceId, count])
+      );
+      setQuizCounts(countsMap);
+    } catch (error) {
+      console.error("Error fetching quiz counts:", error);
+    }
+  };
+
+  // Fetch summary counts for spaces
+  const fetchSummaryCounts = async (spaceIds) => {
+    try {
+      const summaryCountPromises = spaceIds.map(async (spaceId) => {
+        try {
+          // First get all chapters for this space
+          const chaptersResponse = await databases.listDocuments(
+            DATABASE_ID,
+            CHAPTERS_COLLECTION_ID,
+            [Query.equal("spaceId", spaceId)]
+          );
+          
+          // Then get summary count for all chapters in this space
+          const summaryPromises = chaptersResponse.documents.map(async (chapter) => {
+            try {
+              const summaryResponse = await databases.listDocuments(
+                DATABASE_ID,
+                SUMMARIES_COLLECTION_ID,
+                [Query.equal("chapterId", chapter.$id), Query.equal("spaceId", spaceId)]
+              );
+              return summaryResponse.documents.length;
+            } catch (error) {
+              return 0;
+            }
+          });
+          
+          const summaryCounts = await Promise.all(summaryPromises);
+          const totalSummaries = summaryCounts.reduce((sum, count) => sum + count, 0);
+          
+          return { spaceId, count: totalSummaries };
+        } catch (error) {
+          console.error(`Error fetching summaries for space ${spaceId}:`, error);
+          return { spaceId, count: 0 };
+        }
+      });
+
+      const counts = await Promise.all(summaryCountPromises);
+      const countsMap = Object.fromEntries(
+        counts.map(({ spaceId, count }) => [spaceId, count])
+      );
+      setSummaryCounts(countsMap);
+    } catch (error) {
+      console.error("Error fetching summary counts:", error);
+    }
+  };
+
   const fetchSpaces = async () => {
     try {
       const response = await teams.list();
@@ -107,6 +333,22 @@ export default function TeacherDashboard() {
       );
 
       setSpaces(teamsWithMemberships);
+      
+      // Fetch chapter counts for all spaces
+      await fetchChapterCounts(teamsWithMemberships.map(team => team.$id));
+      
+      // Fetch flashcard counts for all spaces
+      await fetchFlashcardCounts(teamsWithMemberships.map(team => team.$id));
+      
+      // Fetch storyboard counts for all spaces
+      await fetchStoryboardCounts(teamsWithMemberships.map(team => team.$id));
+      
+      // Fetch quiz counts for all spaces
+      await fetchQuizCounts(teamsWithMemberships.map(team => team.$id));
+      
+      // Fetch summary counts for all spaces
+      await fetchSummaryCounts(teamsWithMemberships.map(team => team.$id));
+      
       // Fetch members count for each team
       const membersPromises = teamsWithMemberships.map(async (team) => {
         try {
@@ -141,6 +383,7 @@ export default function TeacherDashboard() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setIsCreatingSpace(true);
 
     try {
       const joinCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -158,6 +401,8 @@ export default function TeacherDashboard() {
     } catch (error) {
       console.error("Error creating space:", error);
       setError(error.message || "Failed to create learning space");
+    } finally {
+      setIsCreatingSpace(false);
     }
   };
 
@@ -204,6 +449,109 @@ export default function TeacherDashboard() {
   const handleSpaceClick = async (space) => {
     setSelectedSpace(space);
     await fetchSpaceMembers(space.$id);
+    
+    // Refresh chapter count for the selected space
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        CHAPTERS_COLLECTION_ID,
+        [Query.equal("spaceId", space.$id)]
+      );
+      setChapterCounts(prev => ({
+        ...prev,
+        [space.$id]: response.documents.length
+      }));
+      
+      // Refresh flashcard count for the selected space
+      const flashcardPromises = response.documents.map(async (chapter) => {
+        try {
+          const flashcardResponse = await databases.listDocuments(
+            DATABASE_ID,
+            FLASHCARDS_COLLECTION_ID,
+            [Query.equal("chapterId", chapter.$id)]
+          );
+          return flashcardResponse.documents.length;
+        } catch (error) {
+          return 0;
+        }
+      });
+      
+      const flashcardCounts = await Promise.all(flashcardPromises);
+      const totalFlashcards = flashcardCounts.reduce((sum, count) => sum + count, 0);
+      
+      setFlashcardCounts(prev => ({
+        ...prev,
+        [space.$id]: totalFlashcards
+      }));
+
+      // Refresh storyboard count for the selected space
+      const storyboardPromises = response.documents.map(async (chapter) => {
+        try {
+          const storyboardResponse = await databases.listDocuments(
+            DATABASE_ID,
+            STORYBOARDS_COLLECTION_ID,
+            [Query.equal("chapterId", chapter.$id)]
+          );
+          return storyboardResponse.documents.length;
+        } catch (error) {
+          return 0;
+        }
+      });
+      
+      const storyboardCounts = await Promise.all(storyboardPromises);
+      const totalStoryboards = storyboardCounts.reduce((sum, count) => sum + count, 0);
+      
+      setStoryboardCounts(prev => ({
+        ...prev,
+        [space.$id]: totalStoryboards
+      }));
+
+      // Refresh quiz count for the selected space
+      const quizPromises = response.documents.map(async (chapter) => {
+        try {
+          const quizResponse = await databases.listDocuments(
+            DATABASE_ID,
+            QUIZZES_COLLECTION_ID,
+            [Query.equal("chapterId", chapter.$id), Query.equal("spaceId", space.$id)]
+          );
+          return quizResponse.documents.length;
+        } catch (error) {
+          return 0;
+        }
+      });
+      
+      const quizCounts = await Promise.all(quizPromises);
+      const totalQuizzes = quizCounts.reduce((sum, count) => sum + count, 0);
+      
+      setQuizCounts(prev => ({
+        ...prev,
+        [space.$id]: totalQuizzes
+      }));
+
+      // Refresh summary count for the selected space
+      const summaryPromises = response.documents.map(async (chapter) => {
+        try {
+          const summaryResponse = await databases.listDocuments(
+            DATABASE_ID,
+            SUMMARIES_COLLECTION_ID,
+            [Query.equal("chapterId", chapter.$id), Query.equal("spaceId", space.$id)]
+          );
+          return summaryResponse.documents.length;
+        } catch (error) {
+          return 0;
+        }
+      });
+      
+      const summaryCounts = await Promise.all(summaryPromises);
+      const totalSummaries = summaryCounts.reduce((sum, count) => sum + count, 0);
+      
+      setSummaryCounts(prev => ({
+        ...prev,
+        [space.$id]: totalSummaries
+      }));
+    } catch (error) {
+      console.error("Error fetching counts for selected space:", error);
+    }
   };
 
   const handleLogout = async () => {
@@ -280,7 +628,9 @@ export default function TeacherDashboard() {
       if (execStatus.status === "completed") {
         setJoinSuccess("Joined successfully!");
         setJoinCode("");
-        setTimeout(fetchSpaces, 2000);
+        setTimeout(async () => {
+          await fetchSpaces();
+        }, 2000);
       } else if (execStatus.status === "failed") {
         setJoinError("Failed to join space. Function execution failed.");
       } else {
@@ -431,7 +781,7 @@ export default function TeacherDashboard() {
                   {spaces.filter(isMember).map((space) => (
                     <Card
                       key={space.$id}
-                      className="bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-md transition-all p-6"
+                      className={`bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden ${selectedSpace?.$id === space.$id ? "ring-2 ring-indigo-500 dark:ring-indigo-400 shadow-lg scale-[1.02]" : "hover:scale-[1.01]"}`}
                     >
                       <CardBody
                         className="cursor-pointer"
@@ -505,21 +855,23 @@ export default function TeacherDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-1 space-y-4">
                     {spaces.filter(isOwner).length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="mb-4 text-4xl">🏫</div>
-                        <p className="text-slate-600 dark:text-slate-300">
-                          No learning spaces created yet. Create your first
-                          space to get started!
+                      <div className="text-center py-16 bg-white/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
+                        <div className="mb-6 text-6xl">🏫</div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+                          No Learning Spaces Yet
+                        </h3>
+                        <p className="text-slate-600 dark:text-slate-300 text-base">
+                          Create your first space to get started with managing your learning content!
                         </p>
                       </div>
                     ) : (
                       spaces.filter(isOwner).map((space) => (
                         <Card
                           key={space.$id}
-                          className={`bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-md transition-all ${selectedSpace?.$id === space.$id ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""}`}
+                          className={`bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden ${selectedSpace?.$id === space.$id ? "ring-2 ring-indigo-500 dark:ring-indigo-400 shadow-lg scale-[1.02]" : "hover:scale-[1.01]"}`}
                         >
                           <CardBody
-                            className="cursor-pointer"
+                            className="cursor-pointer p-6"
                             role="button"
                             tabIndex={0}
                             onClick={() => handleSpaceClick(space)}
@@ -527,13 +879,13 @@ export default function TeacherDashboard() {
                               if (e.key === "Enter") handleSpaceClick(space);
                             }}
                           >
-                            <div className="flex justify-between items-start">
-                              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            <div className="flex justify-between items-start mb-4">
+                              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                                 {space.name}
                               </h3>
                               <div className="flex items-center gap-2">
                                 <Button
-                                  className="p-1"
+                                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                                   variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -545,7 +897,7 @@ export default function TeacherDashboard() {
                                   ✏️
                                 </Button>
                                 <Button
-                                  className="p-1 text-red-600"
+                                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                   variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -557,12 +909,12 @@ export default function TeacherDashboard() {
                                 </Button>
                               </div>
                             </div>
-                            <div className="mt-2 flex items-center justify-between text-sm">
-                              <span className="text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">
                                 {teamMembers[space.$id] || 0} members
                               </span>
-                              <span className="text-slate-400 dark:text-slate-500">
-                                Code: {space.prefs?.joinCode}
+                              <span className="text-slate-400 dark:text-slate-500 font-mono">
+                                {space.prefs?.joinCode}
                               </span>
                             </div>
                           </CardBody>
@@ -572,14 +924,14 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="lg:col-span-2">
                     {selectedSpace ? (
-                      <Card className="bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 p-6">
-                        <CardBody>
-                          <div className="flex justify-between items-start mb-6">
+                      <Card className="bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 rounded-xl shadow-lg">
+                        <CardBody className="p-8">
+                          <div className="flex justify-between items-start mb-8">
                             <div>
-                              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">
+                              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
                                 {selectedSpace.name}
                               </h2>
-                              <p className="text-slate-600 dark:text-slate-300">
+                              <p className="text-slate-600 dark:text-slate-300 text-lg">
                                 Created on{" "}
                                 {new Date(
                                   selectedSpace.prefs?.createdAt,
@@ -587,11 +939,8 @@ export default function TeacherDashboard() {
                               </p>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-                                {teamMembers[selectedSpace.$id] || 0} members
-                              </span>
                               <Button
-                                className="px-4 py-2"
+                                className="px-8 py-4 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
                                 color="primary"
                                 onClick={() =>
                                   router.push(
@@ -599,61 +948,138 @@ export default function TeacherDashboard() {
                                   )
                                 }
                               >
-                                Enter Space
+                                🚀 Enter Space
                               </Button>
                             </div>
                           </div>
-                          <div className="space-y-6">
+                          <div className="space-y-8">
                             {/* Quick Stats */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <Card className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-                                <CardBody>
-                                  <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                                    Active Students
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden">
+                              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wide">
+                                        Members
                                   </h3>
-                                  <p className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
-                                    {
-                                      spaceMembers.filter(
-                                        (m) => m.roles[0] === "student",
-                                      ).length
-                                    }
-                                  </p>
+                                      <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                                        {teamMembers[selectedSpace.$id] || 0}
+                                      </p>
+                                    </div>
+                                    <div className="text-3xl text-blue-500 dark:text-blue-400">
+                                      👥
+                                    </div>
+                                  </div>
                                 </CardBody>
                               </Card>
-                              <Card className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-                                <CardBody>
-                                  <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                                    Total Chapters
+                              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/50 dark:border-green-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-green-700 dark:text-green-300 mb-1 uppercase tracking-wide">
+                                        Chapters
                                   </h3>
-                                  <p className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
-                                    0
+                                      <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                                        {chapterCounts[selectedSpace.$id] || 0}
                                   </p>
+                                    </div>
+                                    <div className="text-3xl text-green-500 dark:text-green-400">
+                                      📚
+                                    </div>
+                                  </div>
                                 </CardBody>
                               </Card>
-                              <Card className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-                                <CardBody>
-                                  <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
+                              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/50 dark:border-purple-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1 uppercase tracking-wide">
                                     Flashcards
                                   </h3>
-                                  <p className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
-                                    0
-                                  </p>
+                                      <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                                        {flashcardCounts[selectedSpace.$id] || 0}
+                                      </p>
+                                    </div>
+                                    <div className="text-3xl text-purple-500 dark:text-purple-400">
+                                      🎯
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200/50 dark:border-orange-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-orange-700 dark:text-orange-300 mb-1 uppercase tracking-wide">
+                                        Storyboards
+                                      </h3>
+                                      <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                                        {storyboardCounts[selectedSpace.$id] || 0}
+                                      </p>
+                                    </div>
+                                    <div className="text-3xl text-orange-500 dark:text-orange-400">
+                                      🎨
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                              <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200/50 dark:border-red-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-red-700 dark:text-red-300 mb-1 uppercase tracking-wide">
+                                        Quizzes
+                                      </h3>
+                                      <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                                        {quizCounts[selectedSpace.$id] || 0}
+                                      </p>
+                                    </div>
+                                    <div className="text-3xl text-red-500 dark:text-red-400">
+                                      ❓
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                              <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-200/50 dark:border-teal-700/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                                <CardBody className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="text-xs font-medium text-teal-700 dark:text-teal-300 mb-1 uppercase tracking-wide">
+                                        Summaries
+                                      </h3>
+                                      <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                                        {summaryCounts[selectedSpace.$id] || 0}
+                                      </p>
+                                    </div>
+                                    <div className="text-3xl text-teal-500 dark:text-teal-400">
+                                      📝
+                                    </div>
+                                  </div>
                                 </CardBody>
                               </Card>
                             </div>
                             {/* Join Code Section */}
-                            <Card className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-                              <CardBody>
-                                <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                            <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 border border-slate-200/50 dark:border-slate-600/50 rounded-xl p-4 shadow-lg">
+                              <CardBody className="p-0">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-2xl">🔗</div>
+                                    <div>
+                                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
                                   Join Code
                                 </h3>
+                                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                                        Share with students
+                                      </p>
+                                    </div>
+                                  </div>
                                 <div className="flex items-center gap-2">
-                                  <code className="px-3 py-2 bg-white dark:bg-slate-800 rounded-lg text-lg font-mono">
+                                    <code className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-lg font-mono font-bold text-slate-900 dark:text-white tracking-wider shadow-sm">
                                     {selectedSpace.prefs?.joinCode}
                                   </code>
                                   <Button
-                                    className="p-2"
-                                    variant="ghost"
+                                      className="p-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-lg shadow-sm min-w-0 w-auto"
+                                      variant="bordered"
                                     onClick={() => {
                                       navigator.clipboard.writeText(
                                         selectedSpace.prefs?.joinCode,
@@ -666,36 +1092,6 @@ export default function TeacherDashboard() {
                                     📋
                                   </Button>
                                 </div>
-                              </CardBody>
-                            </Card>
-                            {/* Members Section */}
-                            <Card>
-                              <CardBody>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                                  Members
-                                </h3>
-                                <div className="space-y-3">
-                                  {spaceMembers.map((member) => (
-                                    <div
-                                      key={member.$id}
-                                      className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-lg">👤</span>
-                                        <div>
-                                          <p className="font-medium text-slate-900 dark:text-white">
-                                            {member.userName}
-                                          </p>
-                                          <p className="text-sm text-slate-600 dark:text-slate-300">
-                                            {member.userEmail}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-200">
-                                        {member.roles[0]}
-                                      </span>
-                                    </div>
-                                  ))}
                                 </div>
                               </CardBody>
                             </Card>
@@ -703,14 +1099,15 @@ export default function TeacherDashboard() {
                         </CardBody>
                       </Card>
                     ) : (
-                      <Card className="h-full flex items-center justify-center bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 p-6">
-                        <CardBody>
-                          <div className="text-center">
-                            <div className="mb-4 text-4xl">👈</div>
-                            <p className="text-slate-600 dark:text-slate-300">
-                              Select a learning space to view its details
-                            </p>
-                          </div>
+                      <Card className="h-full flex items-center justify-center bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 rounded-xl shadow-lg">
+                        <CardBody className="p-12 text-center">
+                          <div className="mb-6 text-6xl">👈</div>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                            Select a Learning Space
+                          </h3>
+                          <p className="text-slate-600 dark:text-slate-300 text-lg">
+                            Choose a space from the sidebar to view its details and manage content
+                          </p>
                         </CardBody>
                       </Card>
                     )}
@@ -754,15 +1151,30 @@ export default function TeacherDashboard() {
                   onClick={() => {
                     setShowCreateModal(false);
                     setNewSpaceName("");
+                    setError("");
+                    setSuccess("");
                   }}
+                  disabled={isCreatingSpace}
                 >
                   Cancel
                 </button>
                 <button
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isCreatingSpace
+                      ? "bg-slate-400 text-white cursor-not-allowed"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                  }`}
                   type="submit"
+                  disabled={isCreatingSpace}
                 >
-                  Create Space
+                  {isCreatingSpace ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">🔄</span>
+                      Creating...
+                    </span>
+                  ) : (
+                    "Create Space"
+                  )}
                 </button>
               </div>
             </form>

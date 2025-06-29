@@ -442,10 +442,6 @@ export default function UserSpacePage({ params }) {
   const [webNotes, setWebNotes] = useState([]);
   const [selectedWebNote, setSelectedWebNote] = useState(null);
   const [showWebNoteModal, setShowWebNoteModal] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(260);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const sidebarRef = useRef(null);
-  const prevSidebarWidth = useRef(260);
   const [searchingCard, setSearchingCard] = useState(null);
   const [searchResult, setSearchResult] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -653,37 +649,6 @@ export default function UserSpacePage({ params }) {
     }
   };
 
-  const handleSidebarDrag = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = sidebarWidth;
-    const onMouseMove = (moveEvent) => {
-      let newWidth = startWidth + (moveEvent.clientX - startX);
-
-      newWidth = Math.max(56, Math.min(400, newWidth));
-      setSidebarWidth(newWidth);
-      prevSidebarWidth.current = newWidth;
-    };
-    const onMouseUp = () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
-
-  const handleCollapse = () => {
-    if (!sidebarCollapsed) {
-      prevSidebarWidth.current = sidebarWidth;
-      setSidebarWidth(56);
-      setSidebarCollapsed(true);
-    } else {
-      setSidebarWidth(prevSidebarWidth.current || 260);
-      setSidebarCollapsed(false);
-    }
-  };
-
   const hasAnyContent =
     flashcards.length > 0 ||
     summaries.length > 0 ||
@@ -747,482 +712,593 @@ export default function UserSpacePage({ params }) {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900">
       {/* Navbar */}
-      <div className="sticky top-0 left-0 right-0 z-50 bg-black text-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center h-12 gap-2">
-            <Link
-              aria-label="Back to My Spaces"
-              className="flex items-center text-white hover:text-gray-300 mr-2"
-              href="/dashboard"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+      <nav className="bg-white/90 backdrop-blur-md dark:bg-slate-800/90 border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-50 relative">
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center justify-between h-16 relative">
+            <div className="flex items-center gap-2 z-10">
+              <button
+                aria-label="Back to My Spaces"
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors duration-200 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600"
+                onClick={() => router.push('/dashboard')}
               >
-                <path
-                  d="M15 19l-7-7 7-7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
-              </svg>
-            </Link>
-            <span className="text-base font-semibold text-white truncate max-w-xs">
-              {space?.name || "Space"}
-            </span>
-            {space?.description && (
-              <span className="inline-block bg-gray-800 text-white text-xs font-normal px-2 py-0.5 rounded max-w-xs truncate border border-transparent ml-2">
-                {space.description}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Flexible layout: sidebar + main content */}
-      <div className="flex flex-1 w-full">
-        {/* Sidebar: fixed height, independently scrollable */}
-        <aside
-          ref={sidebarRef}
-          className="flex flex-col min-h-screen bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 pt-8 fixed top-0 left-0 z-40"
-          style={{
-            width: sidebarWidth,
-            minWidth: 56,
-            maxWidth: 400,
-            transition: "width 0.2s",
-          }}
-        >
-          <div className="flex items-center justify-between px-2 pb-2">
-            <button
-              aria-label={
-                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-              }
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
-              onClick={handleCollapse}
-            >
-              {sidebarCollapsed ? (
                 <svg
                   className="h-5 w-5"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
                   viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M9 5l7 7-7 7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M15 19l-7-7 7-7"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    strokeWidth={2}
                   />
                 </svg>
+                <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  {space?.name || "Space"}
+                </span>
+              </button>
+              {space?.description && (
+                <span className="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-normal px-2 py-0.5 rounded border border-transparent">
+                  {space.description}
+                </span>
               )}
-            </button>
+            </div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
+              <Tabs
+                aria-label="Navigation Options"
+                className=""
+                selectedKey={
+                  activeTab === "latest-updates"
+                    ? "latest-updates"
+                    : showChaptersList
+                      ? "chapters"
+                      : activeTab === "webnotes"
+                        ? "webnotes"
+                        : ""
+                }
+                onSelectionChange={(key) => {
+                  if (key === "latest-updates") {
+                    setShowChaptersList(false);
+                    setActiveTab("latest-updates");
+                  } else if (key === "chapters") {
+                    setShowChaptersList((v) => !v);
+                    if (!showChaptersList) setActiveTab("flashcards");
+                  } else if (key === "webnotes") {
+                    setShowChaptersList(false);
+                    setActiveTab("webnotes");
+                  }
+                }}
+              >
+                <Tab key="latest-updates" title="🆕 Updates" />
+                <Tab key="chapters" title="📚 Chapters" />
+                <Tab key="webnotes" title="📝 Web Notes" />
+              </Tabs>
+            </div>
+            <div className="flex items-center space-x-4 z-10">
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>👤</span>
+                    {currentUser?.name}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-row gap-4">
-            <Tabs
-              isVertical
-              aria-label="Chapters Toggle"
-              className="w-full mb-0 mr-4 ml-2"
-              selectedKey={
-                activeTab === "latest-updates"
-                  ? "latest-updates"
-                  : showChaptersList
-                    ? "chapters"
-                    : activeTab === "webnotes"
-                      ? "webnotes"
-                      : ""
-              }
-              onSelectionChange={(key) => {
-                if (key === "latest-updates") {
-                  setShowChaptersList(false);
-                  setActiveTab("latest-updates");
-                } else if (key === "chapters") {
-                  setShowChaptersList((v) => !v);
-                  if (!showChaptersList) setActiveTab("flashcards");
-                } else if (key === "webnotes") {
-                  setShowChaptersList(false);
-                  setActiveTab("webnotes");
-                }
-              }}
-            >
-              <Tab
-                key="latest-updates"
-                className="justify-start w-full"
-                title={
-                  <span className="font-bold text-xl py-6 px-8 flex w-full justify-start items-center">
-                    🆕 Updates
-                  </span>
-                }
-              />
-              <Tab
-                key="chapters"
-                className="justify-start w-full"
-                title={
-                  <span className="truncate font-bold text-xl py-6 px-8 flex w-full justify-start items-center">
-                    📚 Chapters
-                  </span>
-                }
-              />
-              <Tab
-                key="webnotes"
-                className="justify-start w-full"
-                title={
-                  <span className="font-bold text-xl py-6 px-8 flex w-full justify-start items-center">
-                    📝 Web Notes
-                  </span>
-                }
-              />
-            </Tabs>
-          </div>
-        </aside>
-        {/* Main Content Area: flexible, scrolls independently */}
-        <main
-          className="flex-1 px-4 sm:px-8 py-8 overflow-y-auto"
-          style={{ marginLeft: sidebarWidth, transition: "margin-left 0.2s" }}
-        >
-          {showChaptersList && chapters.length > 0 && (
-            <Tabs
-              aria-label="Chapter List"
-              className="w-full mb-2"
-              isVertical={false}
-              selectedKey={selectedChapter?.$id || chapters[0]?.$id || ""}
-              onSelectionChange={(key) => {
-                const chapter = chapters.find((c) => c.$id === key);
+        </div>
+      </nav>
+      {/* Main Content Area */}
+      <main className="flex-1 px-4 sm:px-8 py-8 overflow-y-auto">
+        {showChaptersList && chapters.length > 0 && (
+          <Tabs
+            aria-label="Chapter List"
+            className="w-full mb-2"
+            isVertical={false}
+            selectedKey={selectedChapter?.$id || chapters[0]?.$id || ""}
+            onSelectionChange={(key) => {
+              const chapter = chapters.find((c) => c.$id === key);
 
-                if (chapter) handleChapterClick(chapter);
-              }}
+              if (chapter) handleChapterClick(chapter);
+            }}
+          >
+            {chapters.map((chapter) => (
+              <Tab
+                key={chapter.$id}
+                title={
+                  <span className="truncate text-base py-2 px-4 font-medium">
+                    {chapter.name}
+                  </span>
+                }
+              />
+            ))}
+          </Tabs>
+        )}
+        {showChaptersList && !hasAnyContent && (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-lg">
+            No content in this chapter.
+          </div>
+        )}
+        {showChaptersList && hasAnyContent && (
+          <>
+            <Tabs
+              aria-label="Content Type"
+              className="w-full mb-8"
+              isVertical={false}
+              selectedKey={activeTab}
+              onSelectionChange={setActiveTab}
             >
-              {chapters.map((chapter) => (
+              {flashcards.length > 0 && (
                 <Tab
-                  key={chapter.$id}
+                  key="flashcards"
                   title={
-                    <span className="truncate text-base py-2 px-4 font-medium">
-                      {chapter.name}
+                    <span className="font-semibold text-lg py-4 px-6">
+                      Flashcards
                     </span>
                   }
                 />
-              ))}
-            </Tabs>
-          )}
-          {showChaptersList && !hasAnyContent && (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-lg">
-              No content in this chapter.
-            </div>
-          )}
-          {showChaptersList && hasAnyContent && (
-            <>
-              <Tabs
-                aria-label="Content Type"
-                className="w-full mb-8"
-                isVertical={false}
-                selectedKey={activeTab}
-                onSelectionChange={setActiveTab}
-              >
-                {flashcards.length > 0 && (
-                  <Tab
-                    key="flashcards"
-                    title={
-                      <span className="font-semibold text-lg py-4 px-6">
-                        Flashcards
-                      </span>
-                    }
-                  />
-                )}
-                {summaries.length > 0 && (
-                  <Tab
-                    key="summaries"
-                    title={
-                      <span className="font-semibold text-lg py-4 px-6">
-                        Summaries
-                      </span>
-                    }
-                  />
-                )}
-                {quizzes.length > 0 && (
-                  <Tab
-                    key="quizzes"
-                    title={
-                      <span className="font-semibold text-lg py-4 px-6">
-                        Quizzes
-                      </span>
-                    }
-                  />
-                )}
-                {audiobooks.length > 0 && (
-                  <Tab
-                    key="audiobooks"
-                    title={
-                      <span className="font-semibold text-lg py-4 px-6">
-                        Audiobooks
-                      </span>
-                    }
-                  />
-                )}
-                {storyboards.length > 0 && (
-                  <Tab
-                    key="storyboards"
-                    title={
-                      <span className="font-semibold text-lg py-4 px-6">
-                        Storyboards
-                      </span>
-                    }
-                  />
-                )}
-              </Tabs>
-              {activeTab === "flashcards" && flashcards.length > 0 && (
-                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <CardBody>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                      Flashcards
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {flashcards.map((flashcardSet) => (
-                        <button
-                          key={flashcardSet.$id}
-                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                          onClick={() => {
-                            setSelectedFlashcardSet(flashcardSet);
-                            setCurrentCardIndex(0);
-                            setIsFlipped(false);
-                            setShowFlashcardModal(true);
-                          }}
-                        >
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {flashcardSet.title}
-                          </h3>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {flashcardSet.cards.length} cards
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
               )}
-              {activeTab === "summaries" && summaries.length > 0 && (
-                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <CardBody>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+              {summaries.length > 0 && (
+                <Tab
+                  key="summaries"
+                  title={
+                    <span className="font-semibold text-lg py-4 px-6">
                       Summaries
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {summaries.map((summary) => (
-                        <button
-                          key={summary.$id}
-                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                          onClick={() => {
-                            setSelectedSummary(summary);
-                            setShowSummaryModal(true);
-                          }}
-                        >
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {summary.summary?.split(" ").slice(0, 10).join(" ")}
-                            {summary.summary?.split(" ").length > 10
-                              ? "..."
-                              : ""}
-                          </h3>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                            {new Date(summary.createdAt).toLocaleDateString()}
-                          </p>
-                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                            View Summary
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
+                    </span>
+                  }
+                />
               )}
-              {activeTab === "quizzes" && quizzes.length > 0 && (
-                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <CardBody>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+              {quizzes.length > 0 && (
+                <Tab
+                  key="quizzes"
+                  title={
+                    <span className="font-semibold text-lg py-4 px-6">
                       Quizzes
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {quizzes.map((quiz) => (
-                        <button
-                          key={quiz.$id}
-                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                          onClick={() => {
-                            setSelectedQuiz(quiz);
-                            setQuizQuestionIndex(0);
-                            setQuizUserAnswers([]);
-                            setQuizScore(null);
-                            setShowQuizModal(true);
-                          }}
-                        >
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {quiz.title}
-                          </h3>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                            {quiz.questions.length} questions
-                          </p>
-                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                            Take Quiz
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
+                    </span>
+                  }
+                />
               )}
-              {activeTab === "audiobooks" && audiobooks.length > 0 && (
-                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <CardBody>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+              {audiobooks.length > 0 && (
+                <Tab
+                  key="audiobooks"
+                  title={
+                    <span className="font-semibold text-lg py-4 px-6">
                       Audiobooks
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {audiobooks.map((ab) => (
-                        <button
-                          key={ab.$id}
-                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                          onClick={() => {
-                            setSelectedAudiobook(ab);
-                            setShowAudiobookModal(true);
-                          }}
-                        >
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {ab.title || "Untitled Audiobook"}
-                          </h3>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                            {ab.createdAt
-                              ? new Date(ab.createdAt).toLocaleDateString()
-                              : ""}
-                          </p>
-                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                            Listen
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
+                    </span>
+                  }
+                />
               )}
-              {activeTab === "storyboards" && storyboards.length > 0 && (
-                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <CardBody>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+              {storyboards.length > 0 && (
+                <Tab
+                  key="storyboards"
+                  title={
+                    <span className="font-semibold text-lg py-4 px-6">
                       Storyboards
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {storyboards.map((storyboard) => (
-                        <button
-                          key={storyboard.$id}
-                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                          onClick={() => {
-                            setSelectedStoryboard(storyboard);
-                            setCurrentStoryboardSceneIndex(0);
-                            setShowStoryboardModal(true);
-                          }}
-                        >
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {storyboard.title}
-                          </h3>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                            {storyboard.boards.length} boards
-                          </p>
-                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                            View Storyboard
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
+                    </span>
+                  }
+                />
               )}
-            </>
-          )}
-          {activeTab === "webnotes" && (
-            <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <CardBody>
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    My Web Notes
+            </Tabs>
+            {activeTab === "flashcards" && flashcards.length > 0 && (
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                    Flashcards
                   </h2>
-                  <button
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
-                    onClick={() => setShowImportModal(true)}
-                  >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 4v16m8-8H4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                      />
-                    </svg>
-                    New Web Note
-                  </button>
-                </div>
-                {webNotes.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {webNotes.map((note) => (
+                    {flashcards.map((flashcardSet) => (
                       <button
-                        key={note.$id}
+                        key={flashcardSet.$id}
                         className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
                         onClick={() => {
-                          setSelectedWebNote(note);
-                          setShowWebNoteModal(true);
+                          setSelectedFlashcardSet(flashcardSet);
+                          setCurrentCardIndex(0);
+                          setIsFlipped(false);
+                          setShowFlashcardModal(true);
                         }}
                       >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-                          {note.title}
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {flashcardSet.title}
+                        </h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {flashcardSet.cards.length} cards
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+            {activeTab === "summaries" && summaries.length > 0 && (
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                    Summaries
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {summaries.map((summary) => (
+                      <button
+                        key={summary.$id}
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                        onClick={() => {
+                          setSelectedSummary(summary);
+                          setShowSummaryModal(true);
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {summary.summary?.split(" ").slice(0, 10).join(" ")}
+                          {summary.summary?.split(" ").length > 10
+                            ? "..."
+                            : ""}
                         </h3>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                          Saved on{" "}
-                          {new Date(note.$createdAt).toLocaleDateString()} from{" "}
-                          <a
-                            className="underline hover:text-indigo-400"
-                            href={note.sourceUrl}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {new URL(note.sourceUrl).hostname}
-                          </a>
+                          {new Date(summary.createdAt).toLocaleDateString()}
                         </p>
                         <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                          View Note
+                          View Summary
                         </span>
                       </button>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400 dark:text-gray-500">
-                      You haven&apos;t saved any web notes yet. Generate some
-                      from the &apos;New Web Note&apos; button!
-                    </p>
+                </CardBody>
+              </Card>
+            )}
+            {activeTab === "quizzes" && quizzes.length > 0 && (
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                    Quizzes
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {quizzes.map((quiz) => (
+                      <button
+                        key={quiz.$id}
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                        onClick={() => {
+                          setSelectedQuiz(quiz);
+                          setQuizQuestionIndex(0);
+                          setQuizUserAnswers([]);
+                          setQuizScore(null);
+                          setShowQuizModal(true);
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {quiz.title}
+                        </h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                          {quiz.questions.length} questions
+                        </p>
+                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                          Take Quiz
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                )}
-              </CardBody>
-            </Card>
-          )}
-        </main>
-      </div>
+                </CardBody>
+              </Card>
+            )}
+            {activeTab === "audiobooks" && audiobooks.length > 0 && (
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                    Audiobooks
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {audiobooks.map((ab) => (
+                      <button
+                        key={ab.$id}
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                        onClick={() => {
+                          setSelectedAudiobook(ab);
+                          setShowAudiobookModal(true);
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {ab.title || "Untitled Audiobook"}
+                        </h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                          {ab.createdAt
+                            ? new Date(ab.createdAt).toLocaleDateString()
+                            : ""}
+                        </p>
+                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                          Listen
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+            {activeTab === "storyboards" && storyboards.length > 0 && (
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                    Storyboards
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {storyboards.map((storyboard) => (
+                      <button
+                        key={storyboard.$id}
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                        onClick={() => {
+                          setSelectedStoryboard(storyboard);
+                          setCurrentStoryboardSceneIndex(0);
+                          setShowStoryboardModal(true);
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {storyboard.title}
+                        </h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                          {storyboard.boards.length} boards
+                        </p>
+                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                          View Storyboard
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+          </>
+        )}
+        {activeTab === "latest-updates" && (
+          <div className="space-y-8">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700">
+                <CardBody className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">Total Chapters</p>
+                      <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{chapters.length}</p>
+                    </div>
+                    <div className="text-3xl">📚</div>
+                  </div>
+                </CardBody>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-700">
+                <CardBody className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-600 dark:text-green-400 text-sm font-medium">Flashcards</p>
+                      <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                        {flashcards.reduce((total, set) => total + set.cards.length, 0)}
+                      </p>
+                    </div>
+                    <div className="text-3xl">🎯</div>
+                  </div>
+                </CardBody>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-700">
+                <CardBody className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-600 dark:text-purple-400 text-sm font-medium">Quizzes</p>
+                      <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                        {quizzes.reduce((total, quiz) => total + quiz.questions.length, 0)}
+                      </p>
+                    </div>
+                    <div className="text-3xl">🧠</div>
+                  </div>
+                </CardBody>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-700">
+                <CardBody className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-600 dark:text-orange-400 text-sm font-medium">Web Notes</p>
+                      <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{webNotes.length}</p>
+                    </div>
+                    <div className="text-3xl">📝</div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Recent Activity and Quick Actions Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Recent Activity */}
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+                    <span>🕒</span>
+                    Recent Activity
+                  </h2>
+                  <div className="space-y-4">
+                    {chapters.length > 0 && (
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <div className="text-2xl">📚</div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            Latest Chapter: <span className="text-indigo-600 dark:text-indigo-400">{chapters[chapters.length - 1]?.name}</span>
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Added {chapters[chapters.length - 1]?.$createdAt ? new Date(chapters[chapters.length - 1].$createdAt).toLocaleDateString() : 'recently'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {flashcards.length > 0 && (
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <div className="text-2xl">🎯</div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            Flashcards Available: <span className="text-green-600 dark:text-green-400">{flashcards.length} sets</span>
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {flashcards.reduce((total, set) => total + set.cards.length, 0)} total cards to study
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {quizzes.length > 0 && (
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <div className="text-2xl">🧠</div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            Quizzes Ready: <span className="text-purple-600 dark:text-purple-400">{quizzes.length} quizzes</span>
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Test your knowledge with interactive questions
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {webNotes.length > 0 && (
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <div className="text-2xl">📝</div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            Web Notes: <span className="text-orange-600 dark:text-orange-400">{webNotes.length} saved</span>
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Latest: {webNotes[webNotes.length - 1]?.title}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {chapters.length === 0 && flashcards.length === 0 && quizzes.length === 0 && webNotes.length === 0 && (
+                      <div className="text-center py-8">
+                        <div className="text-6xl mb-4">🚀</div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                          Welcome to your Space!
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400">
+                          Start by exploring chapters or creating your first content.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardBody>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+                    <span>⚡</span>
+                    Quick Actions
+                  </h2>
+                  <div className="space-y-4">
+                    <button
+                      className="w-full p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border border-indigo-200 dark:border-indigo-700 rounded-lg hover:scale-105 transition-all duration-200 text-left"
+                      onClick={() => {
+                        setShowChaptersList(true);
+                        setActiveTab("chapters");
+                      }}
+                    >
+                      <div className="text-2xl mb-2">📚</div>
+                      <h3 className="font-semibold text-indigo-900 dark:text-indigo-100">Browse Chapters</h3>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">Explore learning content</p>
+                    </button>
+                    
+                    <button
+                      className="w-full p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-700 rounded-lg hover:scale-105 transition-all duration-200 text-left"
+                      onClick={() => setShowImportModal(true)}
+                    >
+                      <div className="text-2xl mb-2">🌐</div>
+                      <h3 className="font-semibold text-green-900 dark:text-green-100">Import Web Content</h3>
+                      <p className="text-sm text-green-600 dark:text-green-400">Create notes from websites</p>
+                    </button>
+                    
+                    <button
+                      className="w-full p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-700 rounded-lg hover:scale-105 transition-all duration-200 text-left"
+                      onClick={() => setIsSearchWidgetOpen(true)}
+                    >
+                      <div className="text-2xl mb-2">🔍</div>
+                      <h3 className="font-semibold text-purple-900 dark:text-purple-100">Search Web</h3>
+                      <p className="text-sm text-purple-600 dark:text-purple-400">Find information online</p>
+                    </button>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </div>
+        )}
+        {activeTab === "webnotes" && (
+          <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <CardBody>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  My Web Notes
+                </h2>
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 4v16m8-8H4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                  New Web Note
+                </button>
+              </div>
+              {webNotes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {webNotes.map((note) => (
+                    <button
+                      key={note.$id}
+                      className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                      onClick={() => {
+                        setSelectedWebNote(note);
+                        setShowWebNoteModal(true);
+                      }}
+                    >
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
+                        {note.title}
+                      </h3>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                        Saved on{" "}
+                        {new Date(note.$createdAt).toLocaleDateString()} from{" "}
+                        <a
+                          className="underline hover:text-indigo-400"
+                          href={note.sourceUrl}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {new URL(note.sourceUrl).hostname}
+                        </a>
+                      </p>
+                      <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                        View Note
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-400 dark:text-gray-500">
+                    You haven&apos;t saved any web notes yet. Generate some
+                    from the &apos;New Web Note&apos; button!
+                  </p>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </main>
       {/* Flashcard Modal */}
       {showFlashcardModal && selectedFlashcardSet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
@@ -1316,195 +1392,6 @@ export default function UserSpacePage({ params }) {
                     Next
                   </button>
                 </div>
-                <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
-                  Click the card to flip
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Summary Modal */}
-      {showSummaryModal && selectedSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 max-w-lg w-full relative border border-slate-100 dark:border-slate-800">
-            <button
-              aria-label="Close"
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
-              onClick={() => setShowSummaryModal(false)}
-            >
-              ×
-            </button>
-            <h3 className="text-lg font-bold text-center mb-4 text-gray-900 dark:text-white">
-              {selectedSummary.summary?.split(" ").slice(0, 10).join(" ")}
-              {selectedSummary.summary?.split(" ").length > 10 ? "..." : ""}
-            </h3>
-            <div className="mb-2 text-xs text-gray-400 dark:text-gray-500 text-center">
-              {new Date(selectedSummary.createdAt).toLocaleDateString()}
-            </div>
-            <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded text-gray-700 dark:text-gray-200 text-sm max-h-60 overflow-y-auto">
-              {selectedSummary.summary}
-            </div>
-            <div className="flex justify-center">
-              <a
-                className="text-xs text-indigo-500 dark:text-indigo-300 underline hover:text-indigo-700 dark:hover:text-indigo-200"
-                href={selectedSummary.url}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Source URL
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Quiz Modal */}
-      {showQuizModal && selectedQuiz && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 max-w-lg w-full relative border border-slate-100 dark:border-slate-800">
-            <button
-              aria-label="Close"
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
-              onClick={() => setShowQuizModal(false)}
-            >
-              ×
-            </button>
-            <h3 className="text-lg font-bold text-center mb-4 text-gray-900 dark:text-white">
-              {selectedQuiz.title}
-            </h3>
-            {quizScore === null ? (
-              <>
-                <div className="mb-4 text-xs text-gray-400 dark:text-gray-500 text-center">
-                  Question {quizQuestionIndex + 1} of{" "}
-                  {selectedQuiz.questions.length}
-                </div>
-                <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded text-gray-900 dark:text-gray-200 text-base font-medium">
-                  {selectedQuiz.questions[quizQuestionIndex].question}
-                </div>
-                <div className="space-y-3 mb-6">
-                  {selectedQuiz.questions[quizQuestionIndex].options.map(
-                    (option, idx) => (
-                      <label
-                        key={idx}
-                        className={`block px-4 py-2 rounded-lg border cursor-pointer transition-all text-gray-700 dark:text-gray-200 ${quizUserAnswers[quizQuestionIndex] === option ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30" : "border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
-                      >
-                        <input
-                          checked={
-                            quizUserAnswers[quizQuestionIndex] === option
-                          }
-                          className="mr-2 accent-indigo-500"
-                          name={`quiz-option-${quizQuestionIndex}`}
-                          type="radio"
-                          value={option}
-                          onChange={() => {
-                            const newAnswers = [...quizUserAnswers];
-
-                            newAnswers[quizQuestionIndex] = option;
-                            setQuizUserAnswers(newAnswers);
-                          }}
-                        />
-                        {option}
-                      </label>
-                    ),
-                  )}
-                </div>
-                <div className="flex justify-between items-center">
-                  <button
-                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                    disabled={quizQuestionIndex === 0}
-                    onClick={() => {
-                      if (quizQuestionIndex > 0)
-                        setQuizQuestionIndex(quizQuestionIndex - 1);
-                    }}
-                  >
-                    Previous
-                  </button>
-                  {quizQuestionIndex < selectedQuiz.questions.length - 1 ? (
-                    <button
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
-                      disabled={!quizUserAnswers[quizQuestionIndex]}
-                      onClick={() => {
-                        if (quizUserAnswers[quizQuestionIndex])
-                          setQuizQuestionIndex(quizQuestionIndex + 1);
-                      }}
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                      disabled={
-                        quizUserAnswers.length !==
-                          selectedQuiz.questions.length ||
-                        quizUserAnswers.includes(undefined)
-                      }
-                      onClick={() => {
-                        // Calculate score
-                        let score = 0;
-
-                        selectedQuiz.questions.forEach((q, i) => {
-                          if (quizUserAnswers[i] === q.correct_answer) score++;
-                        });
-                        setQuizScore(score);
-                      }}
-                    >
-                      Submit
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
-                  Score: {quizScore} / {selectedQuiz.questions.length}
-                </div>
-                <div className="mb-6 text-gray-700 dark:text-gray-200 text-center">
-                  Well done! You can close this quiz or try again.
-                </div>
-                <button
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
-                  onClick={() => {
-                    setQuizScore(null);
-                    setQuizUserAnswers([]);
-                    setQuizQuestionIndex(0);
-                  }}
-                >
-                  Retake Quiz
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Audiobook Modal */}
-      {showAudiobookModal && selectedAudiobook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 max-w-lg w-full relative border border-slate-100 dark:border-slate-800">
-            <button
-              aria-label="Close"
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
-              onClick={() => setShowAudiobookModal(false)}
-            >
-              ×
-            </button>
-            <h3 className="text-lg font-bold text-center mb-4 text-gray-900 dark:text-white">
-              {selectedAudiobook.title || "Untitled Audiobook"}
-            </h3>
-            <div className="mb-2 text-xs text-gray-400 dark:text-gray-500 text-center">
-              {selectedAudiobook.createdAt
-                ? new Date(selectedAudiobook.createdAt).toLocaleDateString()
-                : ""}
-            </div>
-            {selectedAudiobook.fileUrl && (
-              <audio controls className="w-full mb-4">
-                <source src={selectedAudiobook.fileUrl} type="audio/mpeg" />
-                <track kind="captions" src="" label="No captions available" />
-                Your browser does not support the audio element.
-              </audio>
-            )}
-            {selectedAudiobook.script && (
-              <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded text-gray-700 dark:text-gray-200 text-sm max-h-40 overflow-y-auto">
-                {selectedAudiobook.script}
               </div>
             )}
           </div>
@@ -1513,7 +1400,7 @@ export default function UserSpacePage({ params }) {
       {/* Storyboard Modal */}
       {showStoryboardModal && selectedStoryboard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 max-w-4xl w-full relative border border-slate-100 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 max-w-6xl w-full relative border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
             <button
               aria-label="Close"
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl z-10"
@@ -1522,396 +1409,108 @@ export default function UserSpacePage({ params }) {
               ×
             </button>
 
-            <h3 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+            <h3 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
               {selectedStoryboard.title}
             </h3>
 
-            {selectedStoryboard.boards.length > 0 && (
+            {selectedStoryboard.storyboards && selectedStoryboard.storyboards.length > 0 && (
               <>
-                <div className="flex flex-col items-center">
-                  <div className="w-full bg-slate-50 dark:bg-slate-800 rounded-lg overflow-hidden shadow-md mb-4 md:flex">
-                    <div className="md:w-1/2">
-                      <img
-                        alt={`Scene ${selectedStoryboard.boards[currentStoryboardSceneIndex].scene_number}`}
-                        className="w-full h-64 md:h-96 object-cover"
-                        src={
-                          selectedStoryboard.boards[currentStoryboardSceneIndex]
-                            .image_url
-                        }
-                      />
-                    </div>
-                    <div className="md:w-1/2 p-6 flex flex-col justify-center">
-                      <h3 className="font-bold text-2xl text-gray-800 dark:text-gray-200 mb-4">
-                        Scene{" "}
-                        {
-                          selectedStoryboard.boards[currentStoryboardSceneIndex]
-                            .scene_number
-                        }
-                      </h3>
-                      <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
-                        {
-                          selectedStoryboard.boards[currentStoryboardSceneIndex]
-                            .supporting_text
-                        }
-                      </p>
+                <div className="flex flex-col items-center mb-6">
+                  <div className="w-full bg-slate-50 dark:bg-slate-800 rounded-lg overflow-hidden shadow-md mb-6">
+                    <div className="md:flex">
+                      <div className="md:w-1/2">
+                        <img
+                          alt={`Scene ${selectedStoryboard.storyboards[currentStoryboardSceneIndex].scene_number}`}
+                          className="w-full h-64 md:h-96 object-cover"
+                          src={selectedStoryboard.storyboards[currentStoryboardSceneIndex].image_url || selectedStoryboard.image_url}
+                        />
+                      </div>
+                      <div className="md:w-1/2 p-6 flex flex-col justify-center">
+                        <div className="mb-4">
+                          <h3 className="font-bold text-2xl text-gray-800 dark:text-gray-200 mb-2">
+                            Scene {selectedStoryboard.storyboards[currentStoryboardSceneIndex].scene_number}
+                          </h3>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                            {currentStoryboardSceneIndex + 1} of {selectedStoryboard.storyboards.length}
+                          </div>
+                        </div>
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Description:</h4>
+                          <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                            {selectedStoryboard.storyboards[currentStoryboardSceneIndex].supporting_text}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Image Prompt:</h4>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed italic">
+                            {selectedStoryboard.storyboards[currentStoryboardSceneIndex].image_prompt}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between w-full max-w-lg mt-4">
+                  <div className="flex items-center justify-between w-full max-w-lg">
                     <button
-                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-2"
                       onClick={() => {
                         setCurrentStoryboardSceneIndex((i) =>
-                          i > 0 ? i - 1 : selectedStoryboard.boards.length - 1,
+                          i > 0 ? i - 1 : selectedStoryboard.storyboards.length - 1,
                         );
                       }}
                     >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
                       Previous
                     </button>
                     <span className="text-gray-500 dark:text-gray-400 font-medium">
-                      {currentStoryboardSceneIndex + 1} /{" "}
-                      {selectedStoryboard.boards.length}
+                      {currentStoryboardSceneIndex + 1} / {selectedStoryboard.storyboards.length}
                     </span>
                     <button
-                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-2"
                       onClick={() => {
                         setCurrentStoryboardSceneIndex((i) =>
-                          i < selectedStoryboard.boards.length - 1 ? i + 1 : 0,
+                          i < selectedStoryboard.storyboards.length - 1 ? i + 1 : 0,
                         );
                       }}
                     >
                       Next
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
+                  </div>
+                </div>
+
+                {/* Scene Thumbnails */}
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-center">All Scenes</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {selectedStoryboard.storyboards.map((scene, index) => (
+                      <button
+                        key={index}
+                        className={`relative rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                          currentStoryboardSceneIndex === index
+                            ? 'border-indigo-500 shadow-lg'
+                            : 'border-slate-200 dark:border-slate-700'
+                        }`}
+                        onClick={() => setCurrentStoryboardSceneIndex(index)}
+                      >
+                        <img
+                          alt={`Scene ${scene.scene_number} thumbnail`}
+                          className="w-full h-20 object-cover"
+                          src={scene.image_url || selectedStoryboard.image_url}
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 text-center">
+                          Scene {scene.scene_number}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-      {/* Web Search Floating Button */}
-      <button
-        aria-label="Search the Web"
-        className="fixed bottom-8 right-8 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 z-50"
-        onClick={() => setIsSearchWidgetOpen(!isSearchWidgetOpen)}
-      >
-        {isSearchWidgetOpen ? (
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6 18L18 6M6 6l12 12"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        ) : (
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        )}
-      </button>
-
-      {/* Import from URL Modal - now correctly implemented */}
-      {showImportModal && (
-        <ImportWebsiteModal
-          isOpen={showImportModal}
-          onClose={() => setShowImportModal(false)}
-          onNotesGenerated={handleNotesGenerated}
-        />
-      )}
-
-      {/* Notes Display Modal */}
-      <NotesModal
-        isOpen={showNotesModal}
-        notes={generatedNotes}
-        onClose={() => setShowNotesModal(false)}
-        onSave={handleSaveNotes}
-      />
-
-      <NotesModal
-        isOpen={showWebNoteModal}
-        notes={selectedWebNote}
-        onClose={() => setShowWebNoteModal(false)}
-      />
-
-      {/* Web Search Widget */}
-      <div
-        className={`fixed bottom-24 right-8 w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl z-40 transform transition-all duration-300 ease-in-out ${isSearchWidgetOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95 pointer-events-none"}`}
-      >
-        <div className="p-4 h-[calc(100vh-10rem)] flex flex-col border border-slate-200 dark:border-slate-800 rounded-2xl">
-          <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              Search the Web
-            </h3>
-            <button
-              aria-label="Close"
-              className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
-              onClick={() => setIsSearchWidgetOpen(false)}
-            >
-              ×
-            </button>
-          </div>
-
-          <div
-            ref={chatContainerRef}
-            className="flex-grow overflow-y-auto pr-2 space-y-4"
-          >
-            {chatHistory.length === 0 && !isSearching ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
-                <svg
-                  className="h-12 w-12 mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                  />
-                </svg>
-                <p>Ask a question to get started.</p>
-              </div>
-            ) : (
-              chatHistory.map((item, index) => {
-                if (item.type === "user") {
-                  return (
-                    <div key={index} className="flex justify-end">
-                      <div className="bg-indigo-600 text-white p-3 rounded-lg max-w-sm">
-                        {item.text}
-                      </div>
-                    </div>
-                  );
-                }
-                if (item.type === "bot") {
-                  return (
-                    <div key={index} className="flex justify-start">
-                      <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg max-w-sm">
-                        <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
-                          {item.data.answer}
-                        </p>
-                        {item.data.results && item.data.results.length > 0 && (
-                          <div className="mt-3">
-                            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 text-sm">
-                              Sources:
-                            </h4>
-                            <div className="space-y-2">
-                              {item.data.results.map((result, rIndex) => (
-                                <a
-                                  key={rIndex}
-                                  className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-                                  href={result.url}
-                                  rel="noopener noreferrer"
-                                  target="_blank"
-                                >
-                                  <svg
-                                    className="h-3 w-3"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                    />
-                                  </svg>
-                                  <span className="truncate">
-                                    {result.title}
-                                  </span>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
-                if (item.type === "error") {
-                  return (
-                    <div key={index} className="flex justify-start">
-                      <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg max-w-sm">
-                        {item.text}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return null;
-              })
-            )}
-
-            {isSearching && (
-              <div className="flex justify-start">
-                <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-indigo-500" />
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">
-                      Searching...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <form
-            className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"
-            onSubmit={handleWebSearch}
-          >
-            <div className="flex gap-2">
-              <input
-                required
-                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:text-white"
-                placeholder="Ask anything..."
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center w-20"
-                disabled={isSearching}
-                type="submit"
-              >
-                {isSearching ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white" />
-                ) : (
-                  "Send"
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      {searchingCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Web Search
-              </h3>
-              <button
-                aria-label="Close"
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl z-10"
-                onClick={() => setSearchingCard(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="mb-4 text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">Query:</span>{" "}
-              {searchingCard?.note}
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto">
-              {searchLoading && (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500 mb-4" />
-                  <span className="text-yellow-700 font-medium">
-                    Searching...
-                  </span>
-                </div>
-              )}
-              {!searchLoading && searchError && (
-                <div className="text-center text-red-500 py-4">
-                  {searchError}
-                </div>
-              )}
-              {!searchLoading && searchResult && (
-                <div className="space-y-4">
-                  <div className="text-base text-gray-900 dark:text-white font-medium whitespace-pre-line">
-                    {searchResult.answer}
-                  </div>
-                  {searchResult.sources && searchResult.sources.length > 0 && (
-                    <div className="mt-2">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">
-                        Sources:
-                      </span>
-                      <ul className="list-disc list-inside text-sm text-blue-700 dark:text-blue-400">
-                        {searchResult.sources.map((src, i) => (
-                          <li key={i}>
-                            <a
-                              className="underline"
-                              href={src.url}
-                              rel="noopener noreferrer"
-                              target="_blank"
-                            >
-                              {src.title || src.url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Chat Card Modal */}
-      {showChatCardModal && selectedChatCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800 h-[400px] max-h-[60vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Insight Card
-              </h3>
-              <button
-                aria-label="Close"
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl z-10"
-                onClick={() => setShowChatCardModal(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="mb-4">
-                <div className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                  Prompt:
-                </div>
-                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded text-gray-900 dark:text-gray-100 whitespace-pre-line">
-                  {selectedChatCard.prompt}
-                </div>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                  AI Response:
-                </div>
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded text-indigo-900 dark:text-indigo-100 whitespace-pre-line">
-                  {selectedChatCard.response}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                onClick={() => setShowChatCardModal(false)}
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

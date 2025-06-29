@@ -821,19 +821,19 @@ export default function TeacherDashboard() {
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                              {space.name}
-                            </h3>
+                            {space.name}
+                          </h3>
                             <div className="flex items-center gap-2 mb-3">
                               <span className="text-xs px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-full font-medium flex items-center gap-1">
                                 <span>👤</span>
-                                {space.memberships
-                                  .find((m) => m.userId === user?.$id)
-                                  ?.roles.join(", ") || "Member"}
-                              </span>
+                            {space.memberships
+                              .find((m) => m.userId === user?.$id)
+                              ?.roles.join(", ") || "Member"}
+                          </span>
                               <span className="text-xs px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full font-medium flex items-center gap-1">
                                 <span>👥</span>
-                                {teamMembers[space.$id] || 0} members
-                              </span>
+                            {teamMembers[space.$id] || 0} members
+                          </span>
                             </div>
                           </div>
                           <div className="text-2xl opacity-60 group-hover:opacity-100 transition-opacity">
@@ -844,7 +844,7 @@ export default function TeacherDashboard() {
                           <div className="flex items-center gap-2">
                             <span className="text-slate-500 dark:text-slate-400 font-mono text-lg tracking-wider bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
                               {space.prefs?.joinCode}
-                            </span>
+                          </span>
                           </div>
                           <div className="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1">
                             <span>Click to enter</span>
@@ -989,10 +989,10 @@ export default function TeacherDashboard() {
                                     <div>
                                       <h3 className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wide">
                                         Members
-                                      </h3>
+                                  </h3>
                                       <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                                         {teamMembers[selectedSpace.$id] || 0}
-                                      </p>
+                                  </p>
                                     </div>
                                     <div className="text-3xl text-blue-500 dark:text-blue-400">
                                       👥
@@ -1006,10 +1006,10 @@ export default function TeacherDashboard() {
                                     <div>
                                       <h3 className="text-xs font-medium text-green-700 dark:text-green-300 mb-1 uppercase tracking-wide">
                                         Chapters
-                                      </h3>
+                                  </h3>
                                       <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                                         {chapterCounts[selectedSpace.$id] || 0}
-                                      </p>
+                                  </p>
                                     </div>
                                     <div className="text-3xl text-green-500 dark:text-green-400">
                                       📚
@@ -1022,8 +1022,8 @@ export default function TeacherDashboard() {
                                   <div className="flex items-center justify-between">
                                     <div>
                                       <h3 className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1 uppercase tracking-wide">
-                                        Flashcards
-                                      </h3>
+                                    Flashcards
+                                  </h3>
                                       <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                                         {flashcardCounts[selectedSpace.$id] || 0}
                                       </p>
@@ -1094,32 +1094,32 @@ export default function TeacherDashboard() {
                                     <div className="text-2xl">🔗</div>
                                     <div>
                                       <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                                        Join Code
-                                      </h3>
+                                  Join Code
+                                </h3>
                                       <p className="text-xs text-slate-600 dark:text-slate-300">
                                         Share with students
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                     <code className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-lg font-mono font-bold text-slate-900 dark:text-white tracking-wider shadow-sm">
-                                      {selectedSpace.prefs?.joinCode}
-                                    </code>
-                                    <Button
+                                    {selectedSpace.prefs?.joinCode}
+                                  </code>
+                                  <Button
                                       className="p-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-lg shadow-sm min-w-0 w-auto"
                                       variant="bordered"
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(
-                                          selectedSpace.prefs?.joinCode,
-                                        );
-                                        setSuccess(
-                                          "Join code copied to clipboard!",
-                                        );
-                                      }}
-                                    >
-                                      📋
-                                    </Button>
-                                  </div>
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(
+                                        selectedSpace.prefs?.joinCode,
+                                      );
+                                      setSuccess(
+                                        "Join code copied to clipboard!",
+                                      );
+                                    }}
+                                  >
+                                    📋
+                                  </Button>
+                                </div>
                                 </div>
                               </CardBody>
                             </Card>
@@ -1135,7 +1135,7 @@ export default function TeacherDashboard() {
                           </h3>
                           <p className="text-slate-600 dark:text-slate-300 text-lg">
                             Choose a space from the sidebar to view its details and manage content
-                          </p>
+                            </p>
                         </CardBody>
                       </Card>
                     )}

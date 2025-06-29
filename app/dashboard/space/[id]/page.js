@@ -119,6 +119,7 @@ export default function SpaceDashboard({ params }) {
   const [generatedStoryboards, setGeneratedStoryboards] = useState([]);
   const [showStoryboardResultModal, setShowStoryboardResultModal] =
     useState(false);
+  const [currentStoryboardIndex, setCurrentStoryboardIndex] = useState(0);
   const [storyboards, setStoryboards] = useState([]);
   const [isSavingStoryboard, setIsSavingStoryboard] = useState(false);
   // Add state for editing flashcard values
@@ -1104,6 +1105,7 @@ export default function SpaceDashboard({ params }) {
 
       if (result.data && result.data.storyboards) {
         setGeneratedStoryboards(result.data.storyboards);
+        setCurrentStoryboardIndex(0); // Reset to first storyboard
         setShowStoryboardResultModal(true);
       }
 
@@ -1112,6 +1114,18 @@ export default function SpaceDashboard({ params }) {
       toast.error(error.message);
     } finally {
       setIsGeneratingStoryboard(false);
+    }
+  };
+
+  const handleNextStoryboard = () => {
+    if (currentStoryboardIndex < generatedStoryboards.length - 1) {
+      setCurrentStoryboardIndex(currentStoryboardIndex + 1);
+    }
+  };
+
+  const handlePreviousStoryboard = () => {
+    if (currentStoryboardIndex > 0) {
+      setCurrentStoryboardIndex(currentStoryboardIndex - 1);
     }
   };
 
@@ -3650,11 +3664,10 @@ export default function SpaceDashboard({ params }) {
                     })
                   }
                 >
+                  <option>1</option>
                   <option>2</option>
                   <option>3</option>
                   <option>4</option>
-                  <option>5</option>
-                  <option>6</option>
                 </select>
               </div>
               <div>
@@ -3716,12 +3729,12 @@ export default function SpaceDashboard({ params }) {
       )}
 
       {/* Storyboard Result Modal */}
-      {showStoryboardResultModal && (
+      {showStoryboardResultModal && generatedStoryboards.length > 0 && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-4xl h-[90vh] flex flex-col border border-slate-200/50 dark:border-slate-700/50">
             <div className="flex items-center justify-between p-4 border-b dark:border-slate-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Generated Storyboard
+                Generated Storyboard ({currentStoryboardIndex + 1} of {generatedStoryboards.length})
               </h2>
               <button
                 className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
@@ -3743,47 +3756,69 @@ export default function SpaceDashboard({ params }) {
                 </svg>
               </button>
             </div>
+            
             <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {generatedStoryboards.map((board, index) => (
-                  <div
-                    key={index}
-                    className="bg-slate-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md"
-                  >
-                    <div className="p-3 bg-slate-200 dark:bg-slate-700/50">
-                      <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">
-                        Scene {board.scene_number}
+              {generatedStoryboards[currentStoryboardIndex] && (
+                <div className="max-w-2xl mx-auto">
+                  <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md">
+                    <div className="p-4 bg-slate-200 dark:bg-slate-700/50">
+                      <h3 className="font-semibold text-xl text-gray-800 dark:text-gray-200">
+                        Scene {generatedStoryboards[currentStoryboardIndex].scene_number}
                       </h3>
                     </div>
-                    <div className="p-4 space-y-4">
+                    <div className="p-6 space-y-6">
                       <img
-                        alt={`Scene ${board.scene_number}`}
-                        className="w-full h-auto rounded-md object-cover"
-                        src={board.image_url}
+                        alt={`Scene ${generatedStoryboards[currentStoryboardIndex].scene_number}`}
+                        className="w-full h-auto rounded-md object-cover shadow-lg"
+                        src={generatedStoryboards[currentStoryboardIndex].image_url}
                       />
-                      <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                        {board.supporting_text}
-                      </p>
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200 text-lg">
+                          Scene Description:
+                        </h4>
+                        <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
+                          {generatedStoryboards[currentStoryboardIndex].supporting_text}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
-            <div className="p-4 border-t dark:border-slate-700 flex justify-end gap-3">
-              <button
-                className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500"
-                disabled={isSavingStoryboard}
-                onClick={() => setShowStoryboardResultModal(false)}
-              >
-                Close
-              </button>
-              <button
-                className="px-4 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-                disabled={isSavingStoryboard}
-                onClick={handleSaveStoryboard}
-              >
-                {isSavingStoryboard ? "Saving..." : "Save Storyboard"}
-              </button>
+            
+            <div className="p-4 border-t dark:border-slate-700 flex items-center justify-between">
+              <div className="flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentStoryboardIndex === 0}
+                  onClick={handlePreviousStoryboard}
+                >
+                  ← Previous
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentStoryboardIndex === generatedStoryboards.length - 1}
+                  onClick={handleNextStoryboard}
+                >
+                  Next →
+                </button>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500"
+                  onClick={() => setShowStoryboardResultModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                  disabled={isSavingStoryboard}
+                  onClick={handleSaveStoryboard}
+                >
+                  {isSavingStoryboard ? "Saving..." : "Save Storyboard"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

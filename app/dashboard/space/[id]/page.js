@@ -124,6 +124,9 @@ export default function SpaceDashboard({ params }) {
   const [storyboardImageUrl, setStoryboardImageUrl] = useState("");
   const [storyboards, setStoryboards] = useState([]);
   const [isSavingStoryboard, setIsSavingStoryboard] = useState(false);
+  const [selectedStoryboardForView, setSelectedStoryboardForView] = useState(null);
+  const [currentViewStoryboardIndex, setCurrentViewStoryboardIndex] = useState(0);
+  const [showStoryboardViewModal, setShowStoryboardViewModal] = useState(false);
   // Add state for editing flashcard values
   const [editingQuestion, setEditingQuestion] = useState("");
   const [editingAnswer, setEditingAnswer] = useState("");
@@ -1251,17 +1254,59 @@ export default function SpaceDashboard({ params }) {
     )
       return;
     try {
+      // Find the storyboard to get the image file ID
+      const storyboardToDelete = storyboards.find(sb => sb.$id === storyboardId);
+      
+      // Delete the image from storage if it exists
+      if (storyboardToDelete && storyboardToDelete.image_url) {
+        try {
+          // Extract file ID from the image URL
+          // Appwrite file URLs are in format: https://cloud.appwrite.io/v1/storage/buckets/{bucketId}/files/{fileId}/view
+          const urlParts = storyboardToDelete.image_url.split('/');
+          const fileId = urlParts[urlParts.length - 2]; // Get the file ID from the URL
+          
+          if (fileId && fileId !== 'view') {
+            await storage.deleteFile(STORYBOARDS_BUCKET_ID, fileId);
+            console.log('Image deleted from storage:', fileId);
+          }
+        } catch (storageError) {
+          console.error('Failed to delete image from storage:', storageError);
+          // Continue with storyboard deletion even if image deletion fails
+        }
+      }
+
+      // Delete the storyboard document from database
       await databases.deleteDocument(
         DATABASE_ID,
         STORYBOARDS_COLLECTION_ID,
         storyboardId,
       );
+      
       toast.success("Storyboard deleted successfully!");
       setStoryboards(storyboards.filter((item) => item.$id !== storyboardId));
     } catch (error) {
+      console.error("Error deleting storyboard:", error);
       toast.error("Failed to delete storyboard.");
     }
   }
+
+  const handleViewStoryboard = (storyboard) => {
+    setSelectedStoryboardForView(storyboard);
+    setCurrentViewStoryboardIndex(0);
+    setShowStoryboardViewModal(true);
+  };
+
+  const handleNextViewStoryboard = () => {
+    if (selectedStoryboardForView && currentViewStoryboardIndex < selectedStoryboardForView.boards.length - 1) {
+      setCurrentViewStoryboardIndex(currentViewStoryboardIndex + 1);
+    }
+  };
+
+  const handlePreviousViewStoryboard = () => {
+    if (currentViewStoryboardIndex > 0) {
+      setCurrentViewStoryboardIndex(currentViewStoryboardIndex - 1);
+    }
+  };
 
   // Add this test function to help debug backend issues
   const testAudiobookBackend = async () => {
@@ -2167,54 +2212,86 @@ export default function SpaceDashboard({ params }) {
                               {storyboards.map((sb) => (
                                 <div
                                   key={sb.$id}
-                                  className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                                  className="p-6 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow"
                                 >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div>
-                                      <div className="font-medium text-slate-900 dark:text-white">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div className="flex-1">
+                                      <div className="font-semibold text-lg text-slate-900 dark:text-white mb-1">
                                         {sb.title || "Untitled Storyboard"}
                                       </div>
-                                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                                      <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                                         {sb.createdAt
                                           ? new Date(
                                               sb.createdAt,
                                             ).toLocaleString()
                                           : ""}
                                       </div>
+                                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                                        {sb.boards.length} scene{sb.boards.length !== 1 ? 's' : ''}
+                                      </div>
                                     </div>
-                                    <button
-                                      className="ml-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-all"
-                                      onClick={() =>
-                                        handleDeleteStoryboard(sb.$id)
-                                      }
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                    {sb.boards.map((board, index) => (
-                                      <div
-                                        key={index}
-                                        className="bg-slate-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md"
+                                    <div className="flex items-center gap-3">
+                                      <button
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                                        onClick={() => handleViewStoryboard(sb)}
                                       >
-                                        <div className="p-3 bg-slate-200 dark:bg-slate-700/50">
-                                          <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">
-                                            Scene {board.scene_number}
-                                          </h3>
-                                        </div>
-                                        <div className="p-4 space-y-4">
-                                          <img
-                                            alt={`Scene ${board.scene_number}`}
-                                            className="w-full h-auto rounded-md object-cover"
-                                            src={board.image_url}
+                                        <svg
+                                          className="h-4 w-4 inline mr-1"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                          xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                          <path
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
                                           />
-                                          <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                                            {board.supporting_text}
+                                          <path
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                          />
+                                        </svg>
+                                        View Storyboard
+                                      </button>
+                                      <button
+                                        className="px-3 py-2 text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-all"
+                                        onClick={() =>
+                                          handleDeleteStoryboard(sb.$id)
+                                        }
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Preview of first scene */}
+                                  {sb.boards.length > 0 && (
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                                      <div className="flex items-center gap-4">
+                                        {sb.image_url && (
+                                          <div className="flex-shrink-0">
+                                            <img
+                                              alt="Storyboard Preview"
+                                              className="w-20 h-20 rounded-md object-cover shadow-sm"
+                                              src={sb.image_url}
+                                            />
+                                          </div>
+                                        )}
+                                        <div className="flex-1">
+                                          <h4 className="font-medium text-slate-800 dark:text-slate-200 mb-1">
+                                            Scene 1 Preview
+                                          </h4>
+                                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                                            {sb.boards[0].supporting_text}
                                           </p>
                                         </div>
                                       </div>
-                                    ))}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -4156,6 +4233,104 @@ export default function SpaceDashboard({ params }) {
                 disabled={isDeletingCard}
               >
                 {isDeletingCard ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Storyboard View Modal */}
+      {showStoryboardViewModal && selectedStoryboardForView && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200/50 dark:border-slate-700/50">
+            <div className="flex items-center justify-between p-4 border-b dark:border-slate-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {selectedStoryboardForView.title} ({currentViewStoryboardIndex + 1} of {selectedStoryboardForView.boards.length})
+              </h2>
+              <button
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                onClick={() => setShowStoryboardViewModal(false)}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M6 18L18 6M6 6l12 12"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                  />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
+              {selectedStoryboardForView.boards[currentViewStoryboardIndex] && (
+                <div className="max-w-6xl mx-auto">
+                  <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md">
+                    <div className="p-4 bg-slate-200 dark:bg-slate-700/50">
+                      <h3 className="font-semibold text-xl text-gray-800 dark:text-gray-200">
+                        Scene {selectedStoryboardForView.boards[currentViewStoryboardIndex].scene_number}
+                      </h3>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex gap-6">
+                        {/* Image on the left */}
+                        <div className="flex-1">
+                          {selectedStoryboardForView.image_url && (
+                            <img
+                              alt={`Storyboard Scene ${selectedStoryboardForView.boards[currentViewStoryboardIndex].scene_number}`}
+                              className="w-full h-auto rounded-md object-cover shadow-lg"
+                              src={selectedStoryboardForView.image_url}
+                            />
+                          )}
+                        </div>
+                        
+                        {/* Text on the right */}
+                        <div className="flex-1 flex flex-col justify-center">
+                          <div className="space-y-4">
+                            <h4 className="font-medium text-gray-800 dark:text-gray-200 text-lg">
+                              Scene Description:
+                            </h4>
+                            <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
+                              {selectedStoryboardForView.boards[currentViewStoryboardIndex].supporting_text}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t dark:border-slate-700 flex items-center justify-between">
+              <div className="flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentViewStoryboardIndex === 0}
+                  onClick={handlePreviousViewStoryboard}
+                >
+                  ← Previous
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentViewStoryboardIndex === selectedStoryboardForView.boards.length - 1}
+                  onClick={handleNextViewStoryboard}
+                >
+                  Next →
+                </button>
+              </div>
+              
+              <button
+                className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:text-gray-200 dark:hover:bg-slate-500"
+                onClick={() => setShowStoryboardViewModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>

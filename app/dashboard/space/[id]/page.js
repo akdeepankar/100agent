@@ -33,6 +33,7 @@ const QUIZZES_COLLECTION_ID = "quizzes";
 const AUDIOBOOKS_COLLECTION_ID = "audiobooks";
 const STORYBOARDS_COLLECTION_ID = "storyboards";
 const AUDIOBOOKS_BUCKET_ID = "audiobooks"; // Make sure this matches your Appwrite bucket ID
+const STORYBOARDS_BUCKET_ID = "files"; // Bucket for storing storyboard images
 
 export default function SpaceDashboard({ params }) {
   const router = useRouter();
@@ -295,7 +296,7 @@ export default function SpaceDashboard({ params }) {
           return {
             ...doc,
             boards: parsedBoards.storyboards || [],
-            image_url: parsedBoards.image_url || null
+            image_url: parsedBoards.image_url || doc.image || null
           };
         }
       });
@@ -1144,6 +1145,39 @@ export default function SpaceDashboard({ params }) {
     }
   };
 
+  const uploadStoryboardImage = async (imageUrl) => {
+    try {
+      // Download the image from the URL
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error('Failed to download image');
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a file from the blob
+      const file = new File([blob], `storyboard_${Date.now()}.png`, { type: 'image/png' });
+      
+      // Upload to Appwrite storage
+      const uploadedFile = await storage.createFile(
+        STORYBOARDS_BUCKET_ID,
+        ID.unique(),
+        file
+      );
+      
+      // Get the file URL
+      const fileUrl = storage.getFileView(STORYBOARDS_BUCKET_ID, uploadedFile.$id);
+      
+      return {
+        fileId: uploadedFile.$id,
+        fileUrl: fileUrl
+      };
+    } catch (error) {
+      console.error('Error uploading storyboard image:', error);
+      throw error;
+    }
+  };
+
   const handleSaveStoryboard = async () => {
     if (!selectedChapter || !generatedStoryboards.length) {
       toast.error("No chapter selected or no storyboard to save.");
@@ -1159,6 +1193,21 @@ export default function SpaceDashboard({ params }) {
         total_boards: generatedStoryboards.length
       };
 
+      // Upload image to Appwrite storage
+      let storyboardImage;
+      try {
+        storyboardImage = await uploadStoryboardImage(storyboardImageUrl);
+      } catch (uploadError) {
+        console.error('Failed to upload image:', uploadError);
+        toast.error("Failed to upload image. Please try again.");
+        return;
+      }
+
+      const storyboardDataWithImage = {
+        ...storyboardData,
+        image_url: storyboardImage.fileUrl
+      };
+
       await databases.createDocument(
         DATABASE_ID,
         STORYBOARDS_COLLECTION_ID,
@@ -1168,7 +1217,8 @@ export default function SpaceDashboard({ params }) {
           spaceId: spaceId,
           userId: user.$id,
           title: storyboardPayload.description.substring(0, 50) + "...",
-          boards: JSON.stringify(storyboardData),
+          boards: JSON.stringify(storyboardDataWithImage),
+          image: storyboardImage.fileUrl,
           createdAt: new Date().toISOString(),
         },
       );
@@ -3782,28 +3832,37 @@ export default function SpaceDashboard({ params }) {
             
             <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
               {generatedStoryboards[currentStoryboardIndex] && (
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                   <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md">
                     <div className="p-4 bg-slate-200 dark:bg-slate-700/50">
                       <h3 className="font-semibold text-xl text-gray-800 dark:text-gray-200">
                         Scene {generatedStoryboards[currentStoryboardIndex].scene_number}
                       </h3>
                     </div>
-                    <div className="p-6 space-y-6">
-                      {storyboardImageUrl && (
-                        <img
-                          alt={`Storyboard Scene ${generatedStoryboards[currentStoryboardIndex].scene_number}`}
-                          className="w-full h-auto rounded-md object-cover shadow-lg"
-                          src={storyboardImageUrl}
-                        />
-                      )}
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-gray-800 dark:text-gray-200 text-lg">
-                          Scene Description:
-                        </h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                          {generatedStoryboards[currentStoryboardIndex].supporting_text}
-                        </p>
+                    <div className="p-6">
+                      <div className="flex gap-6">
+                        {/* Image on the left */}
+                        <div className="flex-1">
+                          {storyboardImageUrl && (
+                            <img
+                              alt={`Storyboard Scene ${generatedStoryboards[currentStoryboardIndex].scene_number}`}
+                              className="w-full h-auto rounded-md object-cover shadow-lg"
+                              src={storyboardImageUrl}
+                            />
+                          )}
+                        </div>
+                        
+                        {/* Text on the right */}
+                        <div className="flex-1 flex flex-col justify-center">
+                          <div className="space-y-4">
+                            <h4 className="font-medium text-gray-800 dark:text-gray-200 text-lg">
+                              Scene Description:
+                            </h4>
+                            <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
+                              {generatedStoryboards[currentStoryboardIndex].supporting_text}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

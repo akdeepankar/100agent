@@ -120,6 +120,7 @@ export default function SpaceDashboard({ params }) {
   const [showStoryboardResultModal, setShowStoryboardResultModal] =
     useState(false);
   const [currentStoryboardIndex, setCurrentStoryboardIndex] = useState(0);
+  const [storyboardImageUrl, setStoryboardImageUrl] = useState("");
   const [storyboards, setStoryboards] = useState([]);
   const [isSavingStoryboard, setIsSavingStoryboard] = useState(false);
   // Add state for editing flashcard values
@@ -281,10 +282,23 @@ export default function SpaceDashboard({ params }) {
         STORYBOARDS_COLLECTION_ID,
         [Query.equal("chapterId", chapterId), Query.orderDesc("createdAt")],
       );
-      const parsedStoryboards = response.documents.map((doc) => ({
-        ...doc,
-        boards: JSON.parse(doc.boards),
-      }));
+      const parsedStoryboards = response.documents.map((doc) => {
+        const parsedBoards = JSON.parse(doc.boards);
+        // Handle both old format (array) and new format (object with image_url and storyboards)
+        if (Array.isArray(parsedBoards)) {
+          return {
+            ...doc,
+            boards: parsedBoards,
+            image_url: null // Old format didn't have image_url
+          };
+        } else {
+          return {
+            ...doc,
+            boards: parsedBoards.storyboards || [],
+            image_url: parsedBoards.image_url || null
+          };
+        }
+      });
 
       setStoryboards(parsedStoryboards);
     } catch (err) {
@@ -1105,6 +1119,7 @@ export default function SpaceDashboard({ params }) {
 
       if (result.data && result.data.storyboards) {
         setGeneratedStoryboards(result.data.storyboards);
+        setStoryboardImageUrl(result.data.image_url || "");
         setCurrentStoryboardIndex(0); // Reset to first storyboard
         setShowStoryboardResultModal(true);
       }
@@ -1137,6 +1152,13 @@ export default function SpaceDashboard({ params }) {
     }
     setIsSavingStoryboard(true);
     try {
+      // Create a storyboard object that includes the image URL and all storyboard data
+      const storyboardData = {
+        image_url: storyboardImageUrl,
+        storyboards: generatedStoryboards,
+        total_boards: generatedStoryboards.length
+      };
+
       await databases.createDocument(
         DATABASE_ID,
         STORYBOARDS_COLLECTION_ID,
@@ -1146,7 +1168,7 @@ export default function SpaceDashboard({ params }) {
           spaceId: spaceId,
           userId: user.$id,
           title: storyboardPayload.description.substring(0, 50) + "...",
-          boards: JSON.stringify(generatedStoryboards),
+          boards: JSON.stringify(storyboardData),
           createdAt: new Date().toISOString(),
         },
       );
@@ -1154,6 +1176,7 @@ export default function SpaceDashboard({ params }) {
       toast.success("Storyboard saved successfully!");
       setShowStoryboardResultModal(false);
       setGeneratedStoryboards([]);
+      setStoryboardImageUrl("");
       await fetchStoryboards(selectedChapter.$id);
     } catch (error) {
       console.error("Error saving storyboard:", error);
@@ -3767,11 +3790,13 @@ export default function SpaceDashboard({ params }) {
                       </h3>
                     </div>
                     <div className="p-6 space-y-6">
-                      <img
-                        alt={`Scene ${generatedStoryboards[currentStoryboardIndex].scene_number}`}
-                        className="w-full h-auto rounded-md object-cover shadow-lg"
-                        src={generatedStoryboards[currentStoryboardIndex].image_url}
-                      />
+                      {storyboardImageUrl && (
+                        <img
+                          alt={`Storyboard Scene ${generatedStoryboards[currentStoryboardIndex].scene_number}`}
+                          className="w-full h-auto rounded-md object-cover shadow-lg"
+                          src={storyboardImageUrl}
+                        />
+                      )}
                       <div className="space-y-3">
                         <h4 className="font-medium text-gray-800 dark:text-gray-200 text-lg">
                           Scene Description:

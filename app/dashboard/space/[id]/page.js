@@ -1147,13 +1147,21 @@ export default function SpaceDashboard({ params }) {
 
   const uploadStoryboardImage = async (imageUrl) => {
     try {
-      // Download the image from the URL
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to download image');
+      // Use server-side API to download the image (bypasses CORS)
+      const downloadResponse = await fetch('/api/download-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      if (!downloadResponse.ok) {
+        throw new Error('Failed to download image from server');
       }
-      
-      const blob = await response.blob();
+
+      // Get the image blob from our server
+      const blob = await downloadResponse.blob();
       
       // Create a file from the blob
       const file = new File([blob], `storyboard_${Date.now()}.png`, { type: 'image/png' });

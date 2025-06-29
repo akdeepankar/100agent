@@ -364,7 +364,7 @@ export default function TeacherDashboard() {
       );
     } catch (error) {
       console.error("Error fetching spaces:", error);
-      setError("Failed to fetch learning spaces");
+      setError("Failed to fetch productivity spaces");
     }
   };
 
@@ -394,13 +394,13 @@ export default function TeacherDashboard() {
         createdAt: new Date().toISOString(),
       });
 
-      setSuccess("Learning space created successfully!");
+      setSuccess("Productivity space created successfully!");
       setShowCreateModal(false);
       setNewSpaceName("");
       await fetchSpaces();
     } catch (error) {
       console.error("Error creating space:", error);
-      setError(error.message || "Failed to create learning space");
+      setError(error.message || "Failed to create productivity space");
     } finally {
       setIsCreatingSpace(false);
     }
@@ -413,7 +413,7 @@ export default function TeacherDashboard() {
 
     try {
       await teams.update(currentSpace.$id, newSpaceName);
-      setSuccess("Learning space updated successfully!");
+      setSuccess("Productivity space updated successfully!");
       setShowEditModal(false);
       setCurrentSpace(null);
       setNewSpaceName("");
@@ -423,7 +423,7 @@ export default function TeacherDashboard() {
       }
     } catch (error) {
       console.error("Error updating space:", error);
-      setError(error.message || "Failed to update learning space");
+      setError(error.message || "Failed to update productivity space");
     }
   };
 
@@ -433,7 +433,7 @@ export default function TeacherDashboard() {
 
     try {
       await teams.delete(currentSpace.$id);
-      setSuccess("Learning space deleted successfully!");
+      setSuccess("Productivity space deleted successfully!");
       setShowDeleteModal(false);
       setCurrentSpace(null);
       if (selectedSpace?.$id === currentSpace.$id) {
@@ -442,7 +442,7 @@ export default function TeacherDashboard() {
       await fetchSpaces();
     } catch (error) {
       console.error("Error deleting space:", error);
-      setError(error.message || "Failed to delete learning space");
+      setError(error.message || "Failed to delete productivity space");
     }
   };
 
@@ -700,13 +700,21 @@ export default function TeacherDashboard() {
         {selected === "my" && (
           <Card className="w-full h-[calc(100vh-4rem)] flex flex-col rounded-none shadow-none border-0 px-0">
             <CardBody className="flex-1 flex flex-col overflow-y-auto px-0 pb-0">
-              <div className="flex flex-col items-center mb-8 pt-8 px-8">
+              <div className="flex justify-between items-center mb-8 pt-8 px-8">
+                <div className="text-left">
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
+                    My Spaces
+                  </h1>
+                  <p className="text-slate-600 dark:text-slate-300 text-lg">
+                    Join and Access smart Spaces and Projects
+                  </p>
+                </div>
                 <Button
-                  className="mb-6 font-semibold"
+                  className="font-semibold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-200"
                   color="primary"
                   onClick={joinModal.onOpen}
                 >
-                  + Join Space
+                  🔗 Join New Space
                 </Button>
               </div>
               <Modal
@@ -717,11 +725,11 @@ export default function TeacherDashboard() {
                   {(onClose) => (
                     <>
                       <ModalHeader className="flex flex-col gap-1">
-                        Join a Space
+                        Join a Workspace
                       </ModalHeader>
                       <ModalBody>
                         <p className="text-slate-600 dark:text-slate-300 mb-4 text-center">
-                          Enter a 6-digit code to join a learning space.
+                          Enter a 6-digit code to join a collaborative workspace.
                         </p>
                         <input
                           className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white text-center text-lg tracking-widest mb-4"
@@ -773,18 +781,33 @@ export default function TeacherDashboard() {
                 </ModalContent>
               </Modal>
               {spaces.filter(isMember).length === 0 ? (
-                <p className="text-center text-slate-600 dark:text-slate-300">
-                  You have not joined any spaces yet.
-                </p>
+                <div className="flex flex-col items-center justify-center flex-1 px-8">
+                  <div className="text-center max-w-md">
+                    <div className="mb-6 text-8xl">🚀</div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                      Ready to Collaborate?
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-300 text-lg mb-8">
+                      Join your first workspace to start collaborating with your team and managing projects together.
+                    </p>
+                    <Button
+                      className="font-semibold px-6 py-3"
+                      color="primary"
+                      onClick={joinModal.onOpen}
+                    >
+                      Join Your First Space
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8 pb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 pb-8">
                   {spaces.filter(isMember).map((space) => (
                     <Card
                       key={space.$id}
-                      className={`bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden ${selectedSpace?.$id === space.$id ? "ring-2 ring-indigo-500 dark:ring-indigo-400 shadow-lg scale-[1.02]" : "hover:scale-[1.01]"}`}
+                      className="bg-white/90 dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden group hover:scale-[1.02]"
                     >
                       <CardBody
-                        className="cursor-pointer"
+                        className="cursor-pointer p-6"
                         role="button"
                         tabIndex={0}
                         onClick={() =>
@@ -795,23 +818,38 @@ export default function TeacherDashboard() {
                             router.push(`/dashboard/myspace/${space.$id}`);
                         }}
                       >
-                        <div className="flex justify-between items-start">
-                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            {space.name}
-                          </h3>
-                          <span className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-full">
-                            {space.memberships
-                              .find((m) => m.userId === user?.$id)
-                              ?.roles.join(", ") || "Member"}
-                          </span>
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {space.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-xs px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-full font-medium flex items-center gap-1">
+                                <span>👤</span>
+                                {space.memberships
+                                  .find((m) => m.userId === user?.$id)
+                                  ?.roles.join(", ") || "Member"}
+                              </span>
+                              <span className="text-xs px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full font-medium flex items-center gap-1">
+                                <span>👥</span>
+                                {teamMembers[space.$id] || 0} members
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-2xl opacity-60 group-hover:opacity-100 transition-opacity">
+                            🚀
+                          </div>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-sm">
-                          <span className="text-slate-500 dark:text-slate-400">
-                            {teamMembers[space.$id] || 0} members
-                          </span>
-                          <span className="text-slate-400 dark:text-slate-500">
-                            Code: {space.prefs?.joinCode}
-                          </span>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 dark:text-slate-400 font-mono text-lg tracking-wider bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                              {space.prefs?.joinCode}
+                            </span>
+                          </div>
+                          <div className="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1">
+                            <span>Click to enter</span>
+                            <span className="group-hover:translate-x-1 transition-transform">→</span>
+                          </div>
                         </div>
                       </CardBody>
                     </Card>
@@ -828,18 +866,19 @@ export default function TeacherDashboard() {
                 <div className="flex justify-between items-center mb-8">
                   <div>
                     <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">
-                      Learning Spaces
+                      Productivity Spaces
                     </h1>
                     <p className="text-slate-600 dark:text-slate-300">
-                      Create and manage your learning spaces
+                      Create and manage your collaborative workspaces
                     </p>
                   </div>
                   <Button
                     className="font-semibold"
                     color="primary"
                     onClick={() => setShowCreateModal(true)}
+                    isDisabled={spaces.filter(isOwner).length >= 3}
                   >
-                    + Create Space
+                    + Create Space {spaces.filter(isOwner).length >= 3 && `(${spaces.filter(isOwner).length}/3)`}
                   </Button>
                 </div>
                 {error && (
@@ -856,12 +895,12 @@ export default function TeacherDashboard() {
                   <div className="lg:col-span-1 space-y-4">
                     {spaces.filter(isOwner).length === 0 ? (
                       <div className="text-center py-16 bg-white/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
-                        <div className="mb-6 text-6xl">🏫</div>
+                        <div className="mb-6 text-6xl">🏢</div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-                          No Learning Spaces Yet
+                          No Productivity Spaces Yet
                         </h3>
                         <p className="text-slate-600 dark:text-slate-300 text-base">
-                          Create your first space to get started with managing your learning content!
+                          Create your first workspace to start collaborating and managing your projects!
                         </p>
                       </div>
                     ) : (
@@ -885,18 +924,6 @@ export default function TeacherDashboard() {
                               </h3>
                               <div className="flex items-center gap-2">
                                 <Button
-                                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCurrentSpace(space);
-                                    setNewSpaceName(space.name);
-                                    setShowEditModal(true);
-                                  }}
-                                >
-                                  ✏️
-                                </Button>
-                                <Button
                                   className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                   variant="ghost"
                                   onClick={(e) => {
@@ -910,7 +937,8 @@ export default function TeacherDashboard() {
                               </div>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-500 dark:text-slate-400 font-medium">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                                <span>👥</span>
                                 {teamMembers[space.$id] || 0} members
                               </span>
                               <span className="text-slate-400 dark:text-slate-500 font-mono">
@@ -961,7 +989,7 @@ export default function TeacherDashboard() {
                                     <div>
                                       <h3 className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wide">
                                         Members
-                                  </h3>
+                                      </h3>
                                       <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                                         {teamMembers[selectedSpace.$id] || 0}
                                       </p>
@@ -978,10 +1006,10 @@ export default function TeacherDashboard() {
                                     <div>
                                       <h3 className="text-xs font-medium text-green-700 dark:text-green-300 mb-1 uppercase tracking-wide">
                                         Chapters
-                                  </h3>
+                                      </h3>
                                       <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                                         {chapterCounts[selectedSpace.$id] || 0}
-                                  </p>
+                                      </p>
                                     </div>
                                     <div className="text-3xl text-green-500 dark:text-green-400">
                                       📚
@@ -994,8 +1022,8 @@ export default function TeacherDashboard() {
                                   <div className="flex items-center justify-between">
                                     <div>
                                       <h3 className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1 uppercase tracking-wide">
-                                    Flashcards
-                                  </h3>
+                                        Flashcards
+                                      </h3>
                                       <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                                         {flashcardCounts[selectedSpace.$id] || 0}
                                       </p>
@@ -1066,32 +1094,32 @@ export default function TeacherDashboard() {
                                     <div className="text-2xl">🔗</div>
                                     <div>
                                       <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                                  Join Code
-                                </h3>
+                                        Join Code
+                                      </h3>
                                       <p className="text-xs text-slate-600 dark:text-slate-300">
                                         Share with students
                                       </p>
                                     </div>
                                   </div>
-                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2">
                                     <code className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-lg font-mono font-bold text-slate-900 dark:text-white tracking-wider shadow-sm">
-                                    {selectedSpace.prefs?.joinCode}
-                                  </code>
-                                  <Button
+                                      {selectedSpace.prefs?.joinCode}
+                                    </code>
+                                    <Button
                                       className="p-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-lg shadow-sm min-w-0 w-auto"
                                       variant="bordered"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(
-                                        selectedSpace.prefs?.joinCode,
-                                      );
-                                      setSuccess(
-                                        "Join code copied to clipboard!",
-                                      );
-                                    }}
-                                  >
-                                    📋
-                                  </Button>
-                                </div>
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(
+                                          selectedSpace.prefs?.joinCode,
+                                        );
+                                        setSuccess(
+                                          "Join code copied to clipboard!",
+                                        );
+                                      }}
+                                    >
+                                      📋
+                                    </Button>
+                                  </div>
                                 </div>
                               </CardBody>
                             </Card>
@@ -1103,7 +1131,7 @@ export default function TeacherDashboard() {
                         <CardBody className="p-12 text-center">
                           <div className="mb-6 text-6xl">👈</div>
                           <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                            Select a Learning Space
+                            Select a Productivity Space
                           </h3>
                           <p className="text-slate-600 dark:text-slate-300 text-lg">
                             Choose a space from the sidebar to view its details and manage content
@@ -1124,7 +1152,7 @@ export default function TeacherDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
-              Create Learning Space
+              Create Productivity Space
             </h2>
             <form onSubmit={handleCreateSpace}>
               <div className="mb-4">
@@ -1136,7 +1164,8 @@ export default function TeacherDashboard() {
                 </label>
                 <input
                   required
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  disabled={isCreatingSpace}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   id="create-space-name"
                   placeholder="Enter space name"
                   type="text"
@@ -1146,32 +1175,27 @@ export default function TeacherDashboard() {
               </div>
               <div className="flex justify-end gap-3">
                 <button
-                  className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                  disabled={isCreatingSpace}
+                  className="px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     setNewSpaceName("");
                     setError("");
-                    setSuccess("");
                   }}
-                  disabled={isCreatingSpace}
                 >
                   Cancel
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isCreatingSpace
-                      ? "bg-slate-400 text-white cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
-                  }`}
+                  disabled={isCreatingSpace || !newSpaceName.trim()}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   type="submit"
-                  disabled={isCreatingSpace}
                 >
                   {isCreatingSpace ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <span className="animate-spin">🔄</span>
                       Creating...
-                    </span>
+                    </>
                   ) : (
                     "Create Space"
                   )}
@@ -1187,7 +1211,7 @@ export default function TeacherDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
-              Edit Learning Space
+              Edit Productivity Space
             </h2>
             <form onSubmit={handleEditSpace}>
               <div className="mb-4">
@@ -1236,7 +1260,7 @@ export default function TeacherDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
-              Delete Learning Space
+              Delete Productivity Space
             </h2>
             <p className="text-slate-600 dark:text-slate-300 mb-6">
               Are you sure you want to delete &quot;{currentSpace.name}&quot;?

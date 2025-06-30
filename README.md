@@ -2,7 +2,7 @@
 
 ## 🚀 Overview
 
-proSpace is a comprehensive AI-powered learning space management platform that enables teachers and students to create, manage, and interact with educational content in collaborative workspaces. The platform leverages advanced AI technologies to generate flashcards, quizzes, summaries, audiobooks, and storyboards from uploaded content, making learning more engaging and interactive.
+proSpace is a comprehensive AI-powered learning space management platform that enables teachers and students to create, manage, and interact with educational content in collaborative workspaces. The platform leverages advanced AI technologies to generate flashcards, quizzes, summaries, and storyboards from uploaded content, making learning more engaging and interactive.
 
 ## ✨ Key Features
 
@@ -49,7 +49,6 @@ proSpace is a comprehensive AI-powered learning space management platform that e
 - **Appwrite**: Backend-as-a-Service for authentication, database, and storage
 - **Tavily AI**: Web search and content processing
 - **OpenAI GPT**: AI content generation (flashcards, quizzes, summaries)
-- **Text-to-Speech**: Audio generation for audiobooks
 - **Image Generation**: AI-powered storyboard creation
 
 ### **External APIs**
@@ -63,7 +62,6 @@ proSpace is a comprehensive AI-powered learning space management platform that e
 100agent/
 ├── app/
 │   ├── api/                    # API routes
-│   │   ├── audiobook/         # Audiobook generation
 │   │   ├── download-image/    # Image download handling
 │   │   ├── flashcards/        # Flashcard generation
 │   │   ├── quiz/              # Quiz generation
@@ -122,7 +120,6 @@ proSpace is a comprehensive AI-powered learning space management platform that e
    - Browse chapters and content in the student view
    - Use flashcards for memorization
    - Take quizzes to test knowledge
-   - Listen to audiobooks
    - View storyboards for visual learning
 
 3. **Web Research**
@@ -167,7 +164,6 @@ proSpace is a comprehensive AI-powered learning space management platform that e
 - `POST /api/flashcards` - Generate flashcards from content
 - `POST /api/quiz` - Create quizzes with questions
 - `POST /api/summary` - Generate content summaries
-- `POST /api/audiobook` - Convert text to audio
 - `POST /api/storyboards` - Create visual storyboards
 
 ### File Management

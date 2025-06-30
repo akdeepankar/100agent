@@ -29,7 +29,6 @@ const DATABASE_ID = "learning_spaces";
 const CHAPTERS_COLLECTION_ID = "chapters";
 const FLASHCARDS_COLLECTION_ID = "flashcards";
 const QUIZZES_COLLECTION_ID = "quizzes";
-const AUDIOBOOKS_COLLECTION_ID = "audiobooks";
 const STORYBOARDS_COLLECTION_ID = "storyboards";
 const WEB_NOTES_COLLECTION_ID = "webnotes";
 
@@ -410,7 +409,6 @@ export default function UserSpacePage({ params }) {
   const [flashcards, setFlashcards] = useState([]);
   const [summaries, setSummaries] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
-  const [audiobooks, setAudiobooks] = useState([]);
   const [storyboards, setStoryboards] = useState([]);
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
   const [selectedFlashcardSet, setSelectedFlashcardSet] = useState(null);
@@ -423,8 +421,6 @@ export default function UserSpacePage({ params }) {
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0);
   const [quizUserAnswers, setQuizUserAnswers] = useState([]);
   const [quizScore, setQuizScore] = useState(null);
-  const [showAudiobookModal, setShowAudiobookModal] = useState(false);
-  const [selectedAudiobook, setSelectedAudiobook] = useState(null);
   const [showStoryboardModal, setShowStoryboardModal] = useState(false);
   const [selectedStoryboard, setSelectedStoryboard] = useState(null);
   const [currentStoryboardSceneIndex, setCurrentStoryboardSceneIndex] =
@@ -491,7 +487,7 @@ export default function UserSpacePage({ params }) {
   const handleChapterClick = async (chapter) => {
     setSelectedChapter(chapter);
     try {
-      const [flashRes, sumRes, quizRes, audioRes, storyRes] = await Promise.all(
+      const [flashRes, sumRes, quizRes, storyRes] = await Promise.all(
         [
           databases.listDocuments(DATABASE_ID, FLASHCARDS_COLLECTION_ID, [
             Query.equal("chapterId", chapter.$id),
@@ -503,9 +499,6 @@ export default function UserSpacePage({ params }) {
           databases.listDocuments(DATABASE_ID, "quizzes", [
             Query.equal("chapterId", chapter.$id),
             Query.equal("spaceId", spaceId),
-          ]),
-          databases.listDocuments(DATABASE_ID, AUDIOBOOKS_COLLECTION_ID, [
-            Query.equal("chapterId", chapter.$id),
           ]),
           databases.listDocuments(DATABASE_ID, STORYBOARDS_COLLECTION_ID, [
             Query.equal("chapterId", chapter.$id),
@@ -526,7 +519,6 @@ export default function UserSpacePage({ params }) {
           questions: JSON.parse(doc.questions),
         })),
       );
-      setAudiobooks(audioRes.documents);
       setStoryboards(
         storyRes.documents.map((doc) => ({
           ...doc,
@@ -653,7 +645,6 @@ export default function UserSpacePage({ params }) {
     flashcards.length > 0 ||
     summaries.length > 0 ||
     quizzes.length > 0 ||
-    audiobooks.length > 0 ||
     storyboards.length > 0;
 
   const handleCardSearch = async (card) => {
@@ -717,65 +708,65 @@ export default function UserSpacePage({ params }) {
           <div className="flex items-center justify-between h-16 relative">
             <div className="flex items-center gap-2 z-10">
               <button
-                aria-label="Back to My Spaces"
+              aria-label="Back to My Spaces"
                 className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors duration-200 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600"
                 onClick={() => router.push('/dashboard')}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M15 19l-7-7 7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                  />
-                </svg>
+                <path
+                  d="M15 19l-7-7 7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
+              </svg>
                 <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {space?.name || "Space"}
-                </span>
+              {space?.name || "Space"}
+            </span>
               </button>
-              {space?.description && (
+            {space?.description && (
                 <span className="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-normal px-2 py-0.5 rounded border border-transparent">
-                  {space.description}
-                </span>
-              )}
-            </div>
+                {space.description}
+              </span>
+            )}
+          </div>
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
-              <Tabs
+            <Tabs
                 aria-label="Navigation Options"
                 className=""
-                selectedKey={
-                  activeTab === "latest-updates"
-                    ? "latest-updates"
-                    : showChaptersList
-                      ? "chapters"
-                      : activeTab === "webnotes"
-                        ? "webnotes"
-                        : ""
+              selectedKey={
+                activeTab === "latest-updates"
+                  ? "latest-updates"
+                  : showChaptersList
+                    ? "chapters"
+                    : activeTab === "webnotes"
+                      ? "webnotes"
+                      : ""
+              }
+              onSelectionChange={(key) => {
+                if (key === "latest-updates") {
+                  setShowChaptersList(false);
+                  setActiveTab("latest-updates");
+                } else if (key === "chapters") {
+                  setShowChaptersList((v) => !v);
+                  if (!showChaptersList) setActiveTab("flashcards");
+                } else if (key === "webnotes") {
+                  setShowChaptersList(false);
+                  setActiveTab("webnotes");
                 }
-                onSelectionChange={(key) => {
-                  if (key === "latest-updates") {
-                    setShowChaptersList(false);
-                    setActiveTab("latest-updates");
-                  } else if (key === "chapters") {
-                    setShowChaptersList((v) => !v);
-                    if (!showChaptersList) setActiveTab("flashcards");
-                  } else if (key === "webnotes") {
-                    setShowChaptersList(false);
-                    setActiveTab("webnotes");
-                  }
-                }}
-              >
+              }}
+            >
                 <Tab key="latest-updates" title="🆕 Updates" />
                 <Tab key="chapters" title="📚 Chapters" />
                 <Tab key="webnotes" title="📝 Web Notes" />
-              </Tabs>
-            </div>
+            </Tabs>
+          </div>
             <div className="flex items-center space-x-4 z-10">
               <div className="flex items-center space-x-3">
                 <div className="text-right">
@@ -791,260 +782,217 @@ export default function UserSpacePage({ params }) {
       </nav>
       {/* Main Content Area */}
       <main className="flex-1 px-4 sm:px-8 py-8 overflow-y-auto">
-        {showChaptersList && chapters.length > 0 && (
-          <Tabs
-            aria-label="Chapter List"
-            className="w-full mb-2"
-            isVertical={false}
-            selectedKey={selectedChapter?.$id || chapters[0]?.$id || ""}
-            onSelectionChange={(key) => {
-              const chapter = chapters.find((c) => c.$id === key);
-
-              if (chapter) handleChapterClick(chapter);
-            }}
-          >
-            {chapters.map((chapter) => (
-              <Tab
-                key={chapter.$id}
-                title={
-                  <span className="truncate text-base py-2 px-4 font-medium">
-                    {chapter.name}
-                  </span>
-                }
-              />
-            ))}
-          </Tabs>
-        )}
-        {showChaptersList && !hasAnyContent && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-lg">
-            No content in this chapter.
-          </div>
-        )}
-        {showChaptersList && hasAnyContent && (
-          <>
+          {showChaptersList && chapters.length > 0 && (
             <Tabs
-              aria-label="Content Type"
-              className="w-full mb-8"
+              aria-label="Chapter List"
+              className="w-full mb-2"
               isVertical={false}
-              selectedKey={activeTab}
-              onSelectionChange={setActiveTab}
+              selectedKey={selectedChapter?.$id || chapters[0]?.$id || ""}
+              onSelectionChange={(key) => {
+                const chapter = chapters.find((c) => c.$id === key);
+
+                if (chapter) handleChapterClick(chapter);
+              }}
             >
-              {flashcards.length > 0 && (
+              {chapters.map((chapter) => (
                 <Tab
-                  key="flashcards"
+                  key={chapter.$id}
                   title={
-                    <span className="font-semibold text-lg py-4 px-6">
-                      Flashcards
+                    <span className="truncate text-base py-2 px-4 font-medium">
+                      {chapter.name}
                     </span>
                   }
                 />
-              )}
-              {summaries.length > 0 && (
-                <Tab
-                  key="summaries"
-                  title={
-                    <span className="font-semibold text-lg py-4 px-6">
-                      Summaries
-                    </span>
-                  }
-                />
-              )}
-              {quizzes.length > 0 && (
-                <Tab
-                  key="quizzes"
-                  title={
-                    <span className="font-semibold text-lg py-4 px-6">
-                      Quizzes
-                    </span>
-                  }
-                />
-              )}
-              {audiobooks.length > 0 && (
-                <Tab
-                  key="audiobooks"
-                  title={
-                    <span className="font-semibold text-lg py-4 px-6">
-                      Audiobooks
-                    </span>
-                  }
-                />
-              )}
-              {storyboards.length > 0 && (
-                <Tab
-                  key="storyboards"
-                  title={
-                    <span className="font-semibold text-lg py-4 px-6">
-                      Storyboards
-                    </span>
-                  }
-                />
-              )}
+              ))}
             </Tabs>
-            {activeTab === "flashcards" && flashcards.length > 0 && (
-              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <CardBody>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Flashcards
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {flashcards.map((flashcardSet) => (
-                      <button
-                        key={flashcardSet.$id}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                        onClick={() => {
-                          setSelectedFlashcardSet(flashcardSet);
-                          setCurrentCardIndex(0);
-                          setIsFlipped(false);
-                          setShowFlashcardModal(true);
-                        }}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {flashcardSet.title}
-                        </h3>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          {flashcardSet.cards.length} cards
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-            {activeTab === "summaries" && summaries.length > 0 && (
-              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <CardBody>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Summaries
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {summaries.map((summary) => (
-                      <button
-                        key={summary.$id}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                        onClick={() => {
-                          setSelectedSummary(summary);
-                          setShowSummaryModal(true);
-                        }}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {summary.summary?.split(" ").slice(0, 10).join(" ")}
-                          {summary.summary?.split(" ").length > 10
-                            ? "..."
-                            : ""}
-                        </h3>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                          {new Date(summary.createdAt).toLocaleDateString()}
-                        </p>
-                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                          View Summary
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-            {activeTab === "quizzes" && quizzes.length > 0 && (
-              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <CardBody>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Quizzes
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {quizzes.map((quiz) => (
-                      <button
-                        key={quiz.$id}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                        onClick={() => {
-                          setSelectedQuiz(quiz);
-                          setQuizQuestionIndex(0);
-                          setQuizUserAnswers([]);
-                          setQuizScore(null);
-                          setShowQuizModal(true);
-                        }}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {quiz.title}
-                        </h3>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                          {quiz.questions.length} questions
-                        </p>
-                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                          Take Quiz
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-            {activeTab === "audiobooks" && audiobooks.length > 0 && (
-              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <CardBody>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Audiobooks
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {audiobooks.map((ab) => (
-                      <button
-                        key={ab.$id}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                        onClick={() => {
-                          setSelectedAudiobook(ab);
-                          setShowAudiobookModal(true);
-                        }}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {ab.title || "Untitled Audiobook"}
-                        </h3>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                          {ab.createdAt
-                            ? new Date(ab.createdAt).toLocaleDateString()
-                            : ""}
-                        </p>
-                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                          Listen
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-            {activeTab === "storyboards" && storyboards.length > 0 && (
-              <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <CardBody>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Storyboards
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {storyboards.map((storyboard) => (
-                      <button
-                        key={storyboard.$id}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                        onClick={() => {
-                          setSelectedStoryboard(storyboard);
-                          setCurrentStoryboardSceneIndex(0);
-                          setShowStoryboardModal(true);
-                        }}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {storyboard.title}
-                        </h3>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                          {storyboard.boards.length} boards
-                        </p>
-                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                          View Storyboard
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-          </>
-        )}
+          )}
+          {showChaptersList && !hasAnyContent && (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-lg">
+              No content in this chapter.
+            </div>
+          )}
+          {showChaptersList && hasAnyContent && (
+            <>
+              <Tabs
+                aria-label="Content Type"
+                className="w-full mb-8"
+                isVertical={false}
+                selectedKey={activeTab}
+                onSelectionChange={setActiveTab}
+              >
+                {flashcards.length > 0 && (
+                  <Tab
+                    key="flashcards"
+                    title={
+                      <span className="font-semibold text-lg py-4 px-6">
+                        Flashcards
+                      </span>
+                    }
+                  />
+                )}
+                {summaries.length > 0 && (
+                  <Tab
+                    key="summaries"
+                    title={
+                      <span className="font-semibold text-lg py-4 px-6">
+                        Summaries
+                      </span>
+                    }
+                  />
+                )}
+                {quizzes.length > 0 && (
+                  <Tab
+                    key="quizzes"
+                    title={
+                      <span className="font-semibold text-lg py-4 px-6">
+                        Quizzes
+                      </span>
+                    }
+                  />
+                )}
+                {storyboards.length > 0 && (
+                  <Tab
+                    key="storyboards"
+                    title={
+                      <span className="font-semibold text-lg py-4 px-6">
+                        Storyboards
+                      </span>
+                    }
+                  />
+                )}
+              </Tabs>
+              {activeTab === "flashcards" && flashcards.length > 0 && (
+                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardBody>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                      Flashcards
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {flashcards.map((flashcardSet) => (
+                        <button
+                          key={flashcardSet.$id}
+                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                          onClick={() => {
+                            setSelectedFlashcardSet(flashcardSet);
+                            setCurrentCardIndex(0);
+                            setIsFlipped(false);
+                            setShowFlashcardModal(true);
+                          }}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {flashcardSet.title}
+                          </h3>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            {flashcardSet.cards.length} cards
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+              {activeTab === "summaries" && summaries.length > 0 && (
+                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardBody>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                      Summaries
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {summaries.map((summary) => (
+                        <button
+                          key={summary.$id}
+                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                          onClick={() => {
+                            setSelectedSummary(summary);
+                            setShowSummaryModal(true);
+                          }}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {summary.summary?.split(" ").slice(0, 10).join(" ")}
+                            {summary.summary?.split(" ").length > 10
+                              ? "..."
+                              : ""}
+                          </h3>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                            {new Date(summary.createdAt).toLocaleDateString()}
+                          </p>
+                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                            View Summary
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+              {activeTab === "quizzes" && quizzes.length > 0 && (
+                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardBody>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                      Quizzes
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {quizzes.map((quiz) => (
+                        <button
+                          key={quiz.$id}
+                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                          onClick={() => {
+                            setSelectedQuiz(quiz);
+                            setQuizQuestionIndex(0);
+                            setQuizUserAnswers([]);
+                            setQuizScore(null);
+                            setShowQuizModal(true);
+                          }}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {quiz.title}
+                          </h3>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                            {quiz.questions.length} questions
+                          </p>
+                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                            Take Quiz
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+              {activeTab === "storyboards" && storyboards.length > 0 && (
+                <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardBody>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+                      Storyboards
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {storyboards.map((storyboard) => (
+                        <button
+                          key={storyboard.$id}
+                          className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                          onClick={() => {
+                            setSelectedStoryboard(storyboard);
+                            setCurrentStoryboardSceneIndex(0);
+                            setShowStoryboardModal(true);
+                          }}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {storyboard.title}
+                          </h3>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                            {storyboard.boards.length} boards
+                          </p>
+                          <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                            View Storyboard
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+            </>
+          )}
         {activeTab === "latest-updates" && (
           <div className="space-y-8">
             {/* Stats Overview */}
@@ -1226,79 +1174,79 @@ export default function UserSpacePage({ params }) {
             </div>
           </div>
         )}
-        {activeTab === "webnotes" && (
-          <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <CardBody>
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  My Web Notes
-                </h2>
-                <button
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
-                  onClick={() => setShowImportModal(true)}
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+          {activeTab === "webnotes" && (
+            <Card className="shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <CardBody>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    My Web Notes
+                  </h2>
+                  <button
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                    onClick={() => setShowImportModal(true)}
                   >
-                    <path
-                      d="M12 4v16m8-8H4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                    />
-                  </svg>
-                  New Web Note
-                </button>
-              </div>
-              {webNotes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {webNotes.map((note) => (
-                    <button
-                      key={note.$id}
-                      className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
-                      onClick={() => {
-                        setSelectedWebNote(note);
-                        setShowWebNoteModal(true);
-                      }}
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-                        {note.title}
-                      </h3>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-                        Saved on{" "}
-                        {new Date(note.$createdAt).toLocaleDateString()} from{" "}
-                        <a
-                          className="underline hover:text-indigo-400"
-                          href={note.sourceUrl}
-                          rel="noopener noreferrer"
-                          target="_blank"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {new URL(note.sourceUrl).hostname}
-                        </a>
-                      </p>
-                      <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
-                        View Note
-                      </span>
-                    </button>
-                  ))}
+                      <path
+                        d="M12 4v16m8-8H4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
+                    </svg>
+                    New Web Note
+                  </button>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-400 dark:text-gray-500">
-                    You haven&apos;t saved any web notes yet. Generate some
-                    from the &apos;New Web Note&apos; button!
-                  </p>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        )}
-      </main>
+                {webNotes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {webNotes.map((note) => (
+                      <button
+                        key={note.$id}
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:scale-[1.02] focus:scale-[1.02] transition-transform duration-200 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-700"
+                        onClick={() => {
+                          setSelectedWebNote(note);
+                          setShowWebNoteModal(true);
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
+                          {note.title}
+                        </h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+                          Saved on{" "}
+                          {new Date(note.$createdAt).toLocaleDateString()} from{" "}
+                          <a
+                            className="underline hover:text-indigo-400"
+                            href={note.sourceUrl}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {new URL(note.sourceUrl).hostname}
+                          </a>
+                        </p>
+                        <span className="text-xs text-indigo-500 dark:text-indigo-300 underline">
+                          View Note
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400 dark:text-gray-500">
+                      You haven&apos;t saved any web notes yet. Generate some
+                      from the &apos;New Web Note&apos; button!
+                    </p>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )}
+        </main>
       {/* Flashcard Modal */}
       {showFlashcardModal && selectedFlashcardSet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
@@ -1418,18 +1366,18 @@ export default function UserSpacePage({ params }) {
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-full bg-slate-50 dark:bg-slate-800 rounded-lg overflow-hidden shadow-md mb-6">
                     <div className="md:flex">
-                      <div className="md:w-1/2">
-                        <img
+                    <div className="md:w-1/2">
+                      <img
                           alt={`Scene ${selectedStoryboard.storyboards[currentStoryboardSceneIndex].scene_number}`}
-                          className="w-full h-64 md:h-96 object-cover"
+                        className="w-full h-64 md:h-96 object-cover"
                           src={selectedStoryboard.storyboards[currentStoryboardSceneIndex].image_url || selectedStoryboard.image_url}
-                        />
-                      </div>
-                      <div className="md:w-1/2 p-6 flex flex-col justify-center">
+                      />
+                    </div>
+                    <div className="md:w-1/2 p-6 flex flex-col justify-center">
                         <div className="mb-4">
                           <h3 className="font-bold text-2xl text-gray-800 dark:text-gray-200 mb-2">
                             Scene {selectedStoryboard.storyboards[currentStoryboardSceneIndex].scene_number}
-                          </h3>
+                      </h3>
                           <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                             {currentStoryboardSceneIndex + 1} of {selectedStoryboard.storyboards.length}
                           </div>
@@ -1444,7 +1392,7 @@ export default function UserSpacePage({ params }) {
                           <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Image Prompt:</h4>
                           <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed italic">
                             {selectedStoryboard.storyboards[currentStoryboardSceneIndex].image_prompt}
-                          </p>
+                      </p>
                         </div>
                       </div>
                     </div>
@@ -1488,7 +1436,7 @@ export default function UserSpacePage({ params }) {
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-center">All Scenes</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {selectedStoryboard.storyboards.map((scene, index) => (
-                      <button
+            <button
                         key={index}
                         className={`relative rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                           currentStoryboardSceneIndex === index
@@ -1496,7 +1444,7 @@ export default function UserSpacePage({ params }) {
                             : 'border-slate-200 dark:border-slate-700'
                         }`}
                         onClick={() => setCurrentStoryboardSceneIndex(index)}
-                      >
+            >
                         <img
                           alt={`Scene ${scene.scene_number} thumbnail`}
                           className="w-full h-20 object-cover"
@@ -1504,10 +1452,10 @@ export default function UserSpacePage({ params }) {
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 text-center">
                           Scene {scene.scene_number}
-                        </div>
-                      </button>
+              </div>
+              </button>
                     ))}
-                  </div>
+                    </div>
                 </div>
               </>
             )}
